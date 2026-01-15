@@ -1,8 +1,8 @@
 ---
 title: UIDAI Analytics Command Center
-emoji: 🇮🇳
-colorFrom: navy
-colorTo: orange
+emoji: 📊
+colorFrom: indigo
+colorTo: yellow
 sdk: docker
 pinned: false
 ---
