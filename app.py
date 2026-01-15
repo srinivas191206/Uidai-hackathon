@@ -495,8 +495,17 @@ def generate_mission_brief_html(kpis, recs, insights, scope_name):
 
 @st.cache_data
 def load_and_process_data():
+    GITHUB_RAW_URL = "https://raw.githubusercontent.com/srinivas191206/Uidai-hackathon/main/enrolment_data_main.csv"
+    LOCAL_PATH = "enrolment_data_main.csv"
+    
     try:
-        df = pd.read_csv("enrolment_data_main.csv")
+        # Try local first for speed
+        if os.path.exists(LOCAL_PATH):
+            df = pd.read_csv(LOCAL_PATH)
+        else:
+            # Fallback to GitHub Raw for cloud deployment
+            df = pd.read_csv(GITHUB_RAW_URL)
+            
         df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y', errors='coerce')
         df = df.dropna(subset=['date'])
         
@@ -509,19 +518,30 @@ def load_and_process_data():
         
         return df
     except Exception as e:
-        st.error(f"Data Load Error: {e}")
-        return pd.DataFrame()
+        # Final safety fallback to a direct URL if local check fails
+        try:
+            df = pd.read_csv(GITHUB_RAW_URL)
+            df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y', errors='coerce')
+            df['total_activity'] = df['age_0_5'] + df['age_5_17'] + df['age_18_greater']
+            return df
+        except:
+            st.error(f"Critical Data Load Error: {e}")
+            return pd.DataFrame()
 
 @st.cache_data
 def load_geojson():
-    """
-    Load GeoJSONs from local assets for performance.
-    """
+    BASE_URL = "https://raw.githubusercontent.com/srinivas191206/Uidai-hackathon/main/assets/"
     try:
-        with open("assets/india_states.geojson", "r") as f:
-            states = json.load(f)
-        with open("assets/india_district.geojson", "r") as f:
-            districts = json.load(f)
+        # Determine if we use local or remote
+        if os.path.exists("assets/india_states.geojson"):
+            with open("assets/india_states.geojson", "r") as f:
+                states = json.load(f)
+            with open("assets/india_district.geojson", "r") as f:
+                districts = json.load(f)
+        else:
+            # Fetch from GitHub
+            states = requests.get(BASE_URL + "india_states.geojson").json()
+            districts = requests.get(BASE_URL + "india_district.geojson").json()
         return states, districts
     except Exception as e:
         st.error(f"GeoJSON Load Error: {e}")
