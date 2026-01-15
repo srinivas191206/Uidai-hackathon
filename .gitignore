@@ -1,0 +1,14 @@
+venv/
+.DS_Store
+*.tmp
+nohup.out
+__pycache__/
+.streamlit/config.toml
+check_anomalies.py
+debug_*.py
+enhanced_app.py
+final_app.py
+minimal_app.py
+working_app.py
+app_header.py
+app_fixed.py.tmp
