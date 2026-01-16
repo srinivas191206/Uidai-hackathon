@@ -861,8 +861,8 @@ with tab1:
         sim_col1, sim_col2, sim_col3 = st.columns(3)
         
         with sim_col1:
-            capacity_adj_pct = st.slider("Capacity Adjustment (%)", 0, 100, 0, format="%d%%")
-            st.caption("Flexible reallocation of resources (counters, camps) based on demand.")
+            capacity_adj_count = st.number_input("Capacity Adjustment (People)", min_value=0, max_value=1000, value=0, step=10)
+            st.caption("Number of additional personnel/counters to deploy based on demand.")
             
         with sim_col2:
             extra_hours = st.slider("Extend Center Hours", 0, 4, 0, help="Increase operational hours/day")
@@ -871,15 +871,14 @@ with tab1:
         current_daily_capacity = avg_act # Using active daily avg as proxy for capacity
         current_backlog = tot_act * 0.15 # Simulation: 15% hidden backlog
         
-        # Convert percent adjustment to 'units' equivalent for backend compatibility
-        # Assumption: 1 unit ~ 80/day. Base capacity ~50k. 
-        # We will update logic to use direct capacity addition
-        added_capacity_units = (current_daily_capacity * (capacity_adj_pct / 100)) / 80 # approx unit equivalent
+        # Use the people count directly as additional capacity units
+        # Each person/counter can handle ~80 enrolments per day
+        added_capacity_units = capacity_adj_count
         
         impact = simulate_policy_impact(current_daily_capacity, current_backlog, added_capacity_units, extra_hours)
         
         with sim_col3:
-            if capacity_adj_pct > 0 or extra_hours > 0:
+            if capacity_adj_count > 0 or extra_hours > 0:
                 st.markdown(f"""
                     <div style='background-color: #F0FDF4; border: 1px solid #16A34A; border-radius: 8px; padding: 10px; text-align: center;'>
                         <div style='color: #166534; font-size: 0.8rem; font-weight: 600;'>PROJECTED CLEARANCE</div>
