@@ -20,73 +20,25 @@ from backend.statistical_engine import (
 # --- CONFIGURATION & AESTHETICS ---
 st.set_page_config(page_title="UIDAI Analytics Command Center", layout="wide", page_icon="🇮🇳")
 
-# --- HEADER IMAGE (Menu Bar) ---
-def get_img_as_base64(file):
-    with open(file, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
-img = get_img_as_base64("head.jpg")
-
-# Inject Fixed Header using HTML/CSS
-st.markdown(f"""
+# --- STYLING ---
+st.markdown("""
     <style>
-    /* Fixed Header encompassing full width */
-    .fixed-header {{
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        z-index: 9999999;
-        background-color: white; /* Prevent transparency issues */
-        border-bottom: 2px solid #003366;
-    }}
-    .fixed-header img {{
-        width: 100%;
-        height: auto;
-        display: block;
-        max-height: 120px; /* Constrain height to avoid taking over too much screen */
-        object-fit: cover;
-    }}
-    
-    /* Push content down to account for fixed header */
-    [data-testid="stSidebar"] {{
-        margin-top: 120px;
-        height: calc(100vh - 120px);
-        background-color: #FFFFFF;
-        border-right: 1px solid #E0E0E0;
-    }}
-    /* Remove default Streamlit top padding in sidebar */
-    [data-testid="stSidebar"] > div:first-child {{
-        padding-top: 1rem; 
-    }}
-
-    .block-container {{
-        padding-top: 140px !important; /* Slightly more to give breathing room */
-    }}
-    
-    /* Hide all Streamlit-specific elements for a custom portal look */
-    header {{visibility: hidden !important;}}
-    footer {{visibility: hidden !important;}}
-    #MainMenu {{visibility: hidden !important;}}
-    [data-testid="stDecoration"] {{display: none !important;}}
-    [data-testid="stHeader"] {{display: none !important;}}
+    /* Hide all Streamlit-specific elements for a clean portal look */
+    header {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
+    #MainMenu {visibility: hidden !important;}
+    [data-testid="stDecoration"] {display: none !important;}
+    [data-testid="stHeader"] {display: none !important;}
     
     /* Remove the 'Running...' indicator to look like a managed app */
-    [data-testid="stStatusWidget"] {{display: none !important;}}
+    [data-testid="stStatusWidget"] {display: none !important;}
     
-    /* Push content down to account for fixed header */
-    [data-testid="stSidebar"] {{
-        margin-top: 120px;
-        height: calc(100vh - 120px);
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
         background-color: #FDFDFD;
         border-right: 1px solid #E2E8F0;
-    }}
+    }
     </style>
-    
-    <div class="fixed-header">
-        <img src="data:image/jpg;base64,{img}">
-    </div>
 """, unsafe_allow_html=True)
 
 
