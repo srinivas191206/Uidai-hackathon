@@ -25,7 +25,7 @@ header_html = """
         <div class="header-content">
             <div class="header-left">
                 <span class="header-brand">UIDAI</span>
-                <span class="header-title">Analytics Command Center</span>
+                <span class="header-title">Analytics</span>
             </div>
             <div class="header-right">
                 <a href="#government-grade-data-architecture" class="how-it-works">How it works</a>
