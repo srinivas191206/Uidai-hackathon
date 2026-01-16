@@ -35,18 +35,22 @@ st.markdown("""
         background: #F8FAFC;
     }
 
-    /* Hide Streamlit Native UI */
+    /* Hide Streamlit Native UI and Reset Padding */
     header, footer, #MainMenu, [data-testid="stDecoration"], [data-testid="stHeader"], [data-testid="stStatusWidget"] {
         visibility: hidden !important;
         display: none !important;
     }
     
-    /* Content Layout - TIGHT */
-    .block-container {
-        padding-top: 50px !important; /* Matches exactly the header height */
+    /* Aggressive Container Resets to remove large white space */
+    [data-testid="stAppViewContainer"] {
+        padding-top: 0 !important;
+    }
+    
+    .main .block-container {
+        padding-top: 50px !important; /* Offset for the 50px fixed header */
         padding-left: 2rem !important;
         padding-right: 2rem !important;
-        padding-bottom: 0 !important;
+        padding-bottom: 2rem !important;
         max-width: 100% !important;
     }
 
@@ -61,11 +65,11 @@ st.markdown("""
         display: flex;
         justify-content: space-between;
         align-items: center;
-        z-index: 100000;
+        z-index: 999999; /* Ensure it stays on top of everything */
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         margin: 0 !important;
         height: 50px;
-        border-bottom: 1px solid #1a5c99;
+        border-bottom: 2px solid #1a5c99;
     }
     
     .header-title {
@@ -78,7 +82,7 @@ st.markdown("""
     }
     
     .how-it-works-btn {
-        background-color: #7DD3FC; /* Light Blue */
+        background-color: #7DD3FC;
         color: #003366 !important;
         padding: 6px 14px;
         border-radius: 4px;
@@ -97,9 +101,9 @@ st.markdown("""
 
     /* Sidebars */
     [data-testid="stSidebar"] {
-        background-color: #FFFFFF;
-        border-right: 1px solid #E2E8F0;
-        padding-top: 50px; /* Offset for header */
+        background-color: #FFFFFF !important;
+        border-right: 1px solid #E2E8F0 !important;
+        padding-top: 50px !important;
     }
 
     /* Dashboard Controls Panel */
@@ -132,7 +136,6 @@ st.markdown("""
     /* Tabs Styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
-        background-color: transparent;
     }
     .stTabs [data-baseweb="tab"] {
         background-color: #FFFFFF;
@@ -146,7 +149,6 @@ st.markdown("""
     .stTabs [aria-selected="true"] {
         background-color: #003366 !important;
         color: #FFFFFF !important;
-        border: 1px solid #003366 !important;
     }
     
     /* Section Headers */
@@ -200,10 +202,7 @@ st.markdown("""
         opacity: 0.8;
     }
     </style>
-""", unsafe_allow_html=True)
-
-# --- HEADER ---
-st.markdown("""
+    
     <div class="custom-header">
         <h1 class="header-title">UIDAI Analytics Command Center</h1>
         <a href="#architecture" class="how-it-works-btn">How It Works</a>
