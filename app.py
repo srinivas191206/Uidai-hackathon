@@ -42,12 +42,17 @@ st.markdown("""
     }
     
     /* Aggressive Container Resets to remove large white space */
-    [data-testid="stAppViewContainer"] {
+    [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section {
         padding-top: 0 !important;
+        margin-top: 0 !important;
     }
     
+    [data-testid="stVerticalBlock"] > div:first-child {
+        margin-top: 0 !important;
+    }
+
     .main .block-container {
-        padding-top: 50px !important; /* Offset for the 50px fixed header */
+        padding-top: 45px !important; /* Slightly smaller than header to ensure no gap overlap */
         padding-left: 2rem !important;
         padding-right: 2rem !important;
         padding-bottom: 2rem !important;
