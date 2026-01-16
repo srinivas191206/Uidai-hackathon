@@ -23,6 +23,7 @@ st.set_page_config(page_title="UIDAI Analytics Command Center", layout="wide")
 
 # --- STYLING ---
 st.markdown("""
+    <style>
     /* Global Typography & Background */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@600;700&display=swap');
     
