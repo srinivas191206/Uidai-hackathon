@@ -1,10 +1,9 @@
 FROM python:3.9-slim
 
-# Install system dependencies (needed for some python packages like pandas/numpy)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
-    software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user
