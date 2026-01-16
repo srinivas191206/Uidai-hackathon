@@ -8,6 +8,8 @@ import json
 import base64
 import os
 from datetime import datetime
+from fpdf import FPDF
+import io
 from backend.statistical_engine import (
     calculate_district_metrics,
     perform_custom_clustering,
@@ -18,182 +20,170 @@ from backend.statistical_engine import (
 )
 
 # --- CONFIGURATION & AESTHETICS ---
-# Force rebuild to remove logos
-st.set_page_config(page_title="UIDAI Analytics Command Center", layout="wide")
+st.set_page_config(page_title="UIDAI Analytics Command Center", layout="wide", page_icon="G")
 
-# --- STYLING ---
-st.markdown("""
+# --- HEADER IMAGE (Menu Bar) ---
+def get_img_as_base64(file):
+    with open(file, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+try:
+    header_html = f"""
+        <div class="fixed-header">
+            <img src="data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAADVwAAACLCAYAAAAnQLPIAAAMTGlDQ1BJQ0MgUHJvZmlsZQAASImVVwdYU1cbPndkQggQiICMsJcgIiOAjBBWANlbVEISIIwYE4KKGymtYN0ighOtgihYrYAUF2pdFMW9iwMVpRZrcSv/CQG09B/P/+U59755z3ff833fPffecwCgd/Gl0lxUE4A8Sb4sJtiflZScwiI9Awj8kYElIPIFciknKiocQBs+/91eX4O+0C47KLX+2f9fTUsokgsAQKIgThfKBXkQ/wQA3iqQyvIBIEohbz4rX6rEayHWkcEAIa5R4kwVblXidBW+OOgTF8OF+BEAZHU+X5YJgEYf5FkFgkyoQ4fZAieJUCyB2A9in7y8GUKIF0FsA33gmHSlPjv9K53Mv2mmj2jy+ZkjWJXLoJEDxHJpLn/O/1mO/215uYrhMaxhU8+ShcQoc4Z1e5QzI0yJ1SF+K0mPiIRYGwAUFwsH/ZWYmaUIiVf5ozYCORfWDDAhniTPjeUN8TFCfkAYxIYQZ0hyI8KHfIoyxEFKH1g/tEKcz4uDWA/iGpE8MHbI55hsRszwuNcyZFzOEP+ULxuMQan/WZETz1HpY9pZIt6QPuZYmBWXCDEV4oACcUIExBoQR8hzYsOGfFILs7gRwz4yRYwyFwuIZSJJsL9KHyvPkAXFDPnvzpMP544dyxLzIobwpfysuBBVrbBHAv5g/DAXrE8k4cQP64jkSeHDuQhFAYGq3HGySBIfq+JxPWm+f4zqWtxOmhs15I/7i3KDlbwZxHHygtjhawvy4eRU6eMl0vyoOFWceGU2PzRKFQ++D4QDLggALKCALR3MANlA3NHb1Av/qXqCAB/IQCYQAYchZviKxMEeCTzGgkLwO0QiIB+5zn+wVwQKIP9pFKvkxCOc6ugAMob6lCo54DHEeSAM5ML/ikElyUgECeARZMT/iIgPmwDmkAubsv/f88PsF4YDmfAhRjE8Ios+7EkMJAYQQ4hBRFvcAPfBwfPSDzRln4x7DeXzxJzwmdBIeEK4Sugg3p4uLZKOinAy6oH7QUH3Sv64PbgU1XXF/3BuqQ2WciRsAB9wFjsPBfeHIrpDlDsWtrAprlPbfMvjqDg35UZwoKGUMxY9iM/pKDTsN1xEVZa2/ro8q1vSRenNHekaPz/2q+kJ4DhvtiX2HHcBOY8exs1gr1gRY2FGsGWvHDivxyIx7NDjjhkeLGYwnB+qMnjNf7qyyknKnOqcep4+qvnzR7Hzlw8idIZ0jE2dm5bM48IshYvEkAsdxLGcnZzcAlN8f1evtVfTgdwVhtn/hlvwGgPfRgYGBn79woUcB+NEdvhIOfeFs2PDTogbAmUMChaxAxeHKAwG+Oejw6dMHxsAc2MB8nIEb8AJ+IBCEgkgQB5LBNBh9FpznMjALzAOLQQkoAyvBOlAJtoDtoAbsBftBE2gFx8Ev4Dy4CK6C23D2dIPnoA+8Bh8QBCEhNISB6CMmiCVijzgjbMQHCUTCkRgkGUlDMhEJokDmIUuQMmQ1UolsQ2qRH5FDyHHkLNKJ3ETuIz3In8h7FEPVUR3UCLVCx6NslIOGoXHoVDQTnYkWosXocrQCrUb3oI3ocfQ8ehXtQp+j/RjA1DAmZoo5YGyMi0ViKVgGJsMWYKVYOVaN1WMt8D5fxrqwXuwdTsQZOAt3gDM4BI/HBfhMfAG+DK/Ea/BG/CR+Gb+P9+GfCTSCIcGe4EngEZIImYRZhBJCOWEn4SDhFHyWugmviUQik2hNdIfPYjIxmziXuIy4idhAPEbsJD4k9pNIJH2SPcmbFEnik/JJJaQNpD2ko6RLpG7SW7Ia2YTsTA4ip5Al5CJyOXk3+Qj5EvkJ+QNFk2JJ8aREUoSUOZQVlB2UFsoFSjflA1WLak31psZRs6mLqRXUeuop6h3qKzU1NTM1D7VoNbHaIrUKtX1qZ9Tuq71T11a3U+eqp6or1Jer71I/pn5T/RWNRrOi+dFSaPm05bRa2gnaPdpbDYaGowZPQ6ixUKNKo1HjksYLOoVuSefQp9EL6eX0A/QL9F5NiqaVJleTr7lAs0rzkOZ1zX4thtYErUitPK1lWru1zmo91SZpW2kHagu1i7W3a5/QfsjAGOYMLkPAWMLYwTjF6NYh6ljr8HSydcp09up06PTpauu66Cboztat0j2s28XEmFZMHjOXuYK5n3mN+X6M0RjOGNGYpWPqx1wa80ZvrJ6fnkivVK9B76ree32WfqB+jv4q/Sb9uwa4gZ1BtMEsg80Gpwx6x+qM9RorGFs6dv/YW4aooZ1hjOFcw+2G7Yb9RsZGwUZSow1GJ4x6jZnGfsbZxmuNjxj3mDBMfEzEJmtNjpo8Y+myOKxcVgXrJKvP1NA0xFRhus20w/SDmbVZvFmRWYPZXXOqOds8w3yteZt5n4WJxWSLeRZ1FrcsKZZsyyzL9ZanLd9YWVslWn1r1WT11FrPmmddaF1nfceGZuNrM9Om2uaKLdGWbZtju8n2oh1q52qXZVdld8EetXezF9tvsu8cRxjnMU4yrnrcdQd1B45DgUOdw31HpmO4Y5Fjk+OL8RbjU8avGn96/GcnV6dcpx1OtydoTwidUDShZcKfznbOAucq5ysTaRODJi6c2DzxpYu9i8hls8sNV4brZNdvXdtcP7m5u8nc6t163C3c09w3ul9n67Cj2MvYZzwIHv4eCz1aPd55unnme+73/MPLwSvHa7fX00nWk0STdkx66G3mzffe5t3lw/JJ89nq0+Vr6sv3rfZ94GfuJ/Tb6feEY8vJ5uzhvPB38pf5H/R/w0XgzueeC8ACggNKAzoCtQPjAysD7wWZBWUG1QX1BbsGzw0+FkIICQtZFXKdZ8QT8Gp5faHuofNDT4aph8WGVYY9CLcLl4W3TEYnh05eM/lOhGWEJKIpEkTyItdE3o2yjpoZ9XM0MToquir6ccyEmHkxp2MZsdNjd8e+jvOPWxF3O94mXhHflkBPSE2oTXiTGJC4OrEraXzS/KTzyQbJ4uTmFFJKQsrOlP4pgVPWTelOdU0tSb021Xrq7KlnpxlMy512eDp9On/6gTRCWmLa7rSP/Eh+Nb8/nZe+Mb1PwBWsFzwX+gnXCntE3qLVoicZ3hmrM55memeuyezJ8s0qz+oVc8WV4pfZIdlbst/kRObsyhnITcxtyCPnpeUdkmhLciQnZxjPmD2jU2ovLZF2zfScuW5mnyxMtlOOyKfKm/N14EK/XWGj+EZxv8CnoKrg7ayEWQdma82WzG6fYzdn6ZwnhUGFP8zF5wrmts0znbd43v35nPnbFiAL0he0LTRfWLywe1HwoprF1MU5i38tcipaXfTXksQlLcVGxYuKH34T/E1diUaJrOT6t17fbvkO/078XcfSiUs3LP1cKiw9V+ZUVl72cZlg2bnvJ3xf8f3A8ozlHSvcVmxeSVwpWXltle+qmtVaqwtXP1wzeU3jWtba0rV/rZu+7my5S/mW9dT1ivVdFeEVzRssNqzc8LEyq/JqlX9Vw0bDjUs3vtkk3HRps9/m+i1GW8q2vN8q3npjW/C2xmqr6vLtxO0F2x/vSNhx+gf2D7U7DXaW7fy0S7Krqyam5mSte23tbsPdK+rQOkVdz57UPRf3Buxtrneo39bAbCjbB/Yp9j37Me3Ha/vD9rcdYB+o/8nyp40HGQdLG5HGOY19TVlNXc3JzZ2HQg+1tXi1HPzZ8eddraatVYd1D684Qj1SfGTgaOHR/mPSY73HM48/bJvedvtE0okrJ6NPdpwKO3Xml6BfTpzmnD56xvtM61nPs4fOsc81nXc739ju2n7wV9dfD3a4dTRecL/QfNHjYkvnpM4jl3wvHb8ccPmXK7wr569GXO28Fn/txvXU6103hDee3sy9+fJWwa0PtxfdIdwpvat5t/ye4b3q32x/a+hy6zp8P+B++4PYB7cfCh4+fyR/9LG7+DHtcfkTkye1T52ftvYE9Vx8NuVZ93Pp8w+9Jb9r/b7xhc2Ln/7w+6O9L6mv+6Xs5cCfy17pv9r1l8tfbf1R/fde573+8Kb0rf7bmnfsd6ffJ75/8mHWR9LHik+2n1o+h32+M5A3MCDly/iDSwEMKLc2GQD8uQsAWjIADLhvpE5R7Q8HDVHtaQcR+E9YtYccNLhyqYdr+uheuLq5DsC+HQBYQX16KgBRNADiPAA6ceJIG97LDe47lUaEe4Otwk/peeng35hqT/pV3KPPQKnqAkaf/wUNOIL//lwEPQAAAJZlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAACQAAAAAQAAAJAAAAABAAOShgAHAAAAEgAAAISgAgAEAAAAAQAADVygAwAEAAAAAQAAAIsAAAAAQVNDSUkAAABTY3JlZW5zaG90IqzUJAAAAAlwSFlzAAAWJQAAFiUBSVIk8AAAAt1pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDYuMC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6ZXhpZj0iaHR0cDovL25zLmFkb2JlLmNvbS9leGlmLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIj4KICAgICAgICAgPGV4aWY6VXNlckNvbW1lbnQ+U2NyZWVuc2hvdDwvZXhpZjpVc2VyQ29tbWVudD4KICAgICAgICAgPGV4aWY6UGl4ZWxYRGltZW5zaW9uPjM0MjA8L2V4aWY6UGl4ZWxYRGltZW5zaW9uPgogICAgICAgICA8ZXhpZjpQaXhlbFlEaW1lbnNpb24+MjIxNDwvZXhpZjpQaXhlbFlEaW1lbnNpb24+CiAgICAgICAgIDx0aWZmOlJlc29sdXRpb25Vbml0PjI8L3RpZmY6UmVzb2x1dGlvblVuaXQ+CiAgICAgICAgIDx0aWZmOlhSZXNvbHV0aW9uPjE0NC8xPC90aWZmOlhSZXNvbHV0aW9uPgogICAgICAgICA8dGlmZjpZUmVzb2x1dGlvbj4xNDQvMTwvdGlmZjpZUmVzb2x1dGlvbi4+CiAgICAgICAgIDx0aWZmOl9PcmllbnRhdGlvbj4xPC90aWZmOl9PcmllbnRhdGlvbj4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+CsTZljUAAEAASURBVHgB7N1t1qu6cjXsnP536GlL3pbkV96yxIVAIAxCeNn3iDOyJ7OQ6mNKJbDX2mf/53/++//973/957/+67/+N/7/Csbw9DEPfxS3Cf5vJP6fReItzl5QuXm+MoZipPu/4XDOusEN+M90v8XZT2Fah0VA/PJCU8TC1pz9B9HCSN0CsM+cjlcwnCY/rw3wupg+g+Wr3bU4+1j8T+ym5fGBX8MslD6RYZbt1T/zJ+kZbARyWsKxfBDvFCLNDxYgXaHxJzDFCMcOULw6v5znHmDneS6Cev8SazlP80ke47d9Qb8eDK8xLev/upg+hMJ/GlOBiwrwERhuuREBH4F8vlmP+naLs1/Da+f86z1Nf26xyFXLo1T2FmdvYssB+0iUBEETfzyAqL+B5JAtPmNcOP+TjngHirFaD08NN9vctG9E2esvnVRz9nMYXtM6qBgfhJJeuGf6HKYCF+HwHly4eepSWvzjT+AUI7Xfy3/6lPNbp2zPcd+n36FdaBw+Hkv2OesWZz+NdDcBnzEuHj6/hP4bOAsX5TgYejFcJHfm44Mw3Lw+6/4oWee7hctiLOpHcfBrmIUqfSd3q9Hi7Kex5ZB9JEqK4Ik/EUCgH0RySB2fMS5s8MsYTtP0ON8Xv39xI+RqecLY4uzfhbnP1FK/b9W8dNgs8KLiurK4ZVgJUASqh1/lfJqHfxQV2IMSfbAAaQmFP4FirMpxjruJlwS8f9kYLc5esGyv4o2Xz2KpLsdtcfYZJc4w/14fhqRjDHDgXEU+zcP/FG4EJFwHxpTkbrGBuX8CrcMiHNMS69u9PM/Tf/oD70H9d//7j3rJPPMwvLbv/DFgBHJ6KKhABuM9yEcdkP0HUNlSxWeMC+fNXRSDH3ww1qvR4uxjUd919mL8Lz43NQp4WIfJ/m9d13l5u0i3QmAP4o2liD4COTzQZSmEPgI5PNwPe4EOhXAoCbW6bU4+1CM8tPxEdklv/iMuX/0yet73qufatRY7Ls8YiS1F+dV4k1lfvFGXRHeg7Ng0wU+CMNN+thQ+EeRLoLiPcjHuqA18xwxtnDjVhhpHPfHdN+4OxgppaojgdRv+Arz83AaGeOvcfMy0kDF+A9hEmyRLz5jXPQuoF+qFufVItIfuSSUcvCT6HmQd27auOn5kHj4JP/C3SzntO3wt5jd5eV8+cU/gBEifUq/1TwXWO7v84/3H92n/C3TEOTTQuArHJkAx4cBDfpOfCtHDHjbCFF/eSGL4X5/z7oUniXweyBBavXwb0a5b+Xz/MsjrvVfVEzHxXk17GCRNGHxj+JWsXEn54BCWulx7f4I5PNwPQQyGO/B7OOn+y/KTsdRlJJkw2fM3wc9Tw6//9XnmkZjJzn7zP/SxcV9tDqfFudVsocuyR073olgPuwPgz6FF/WyEZ3nkebZ/lNRXT6+i/ogxcmPk//8z/8X/8LV9CkPpGwovKcwXqWCX0BhTcFHIJ830pt2NE+BIxK7ldAilw9cRrkO3BQNX8jgvNzHfCA7iFcYrZD2X0xMdnxGak/jbqhPKWm3OPvnsJURe4WHB3DsK/dHHMhE+OrtSh/J4j3Ixxrr8lc8wuiPZMefwEgrVRWBVsvLfoAqqs/7muu4c8jrShHG78Ak2CIV/DTGwNYCxzmVdHLw4U1c5PHDl/Vqr3n+AvySN3/wCWPj+kEuvQjhuzjtc8+HCJT2/VmMBNIyG49Pmb3ANmB6x40bh62I7FdQVusVYd1F7t3En0AxLqRnSkGJseA9yMethOZu53njvQujrNbx49g5xqnf+Fn2WWTu/Ss1Fj5X5L1L5vqlcDX/HbSPVIRP6ABycuC7GD7StNAr3cdPohS+Wm76SBYvWL7w5kJaXJnuF27f7WCEudcf03x+GpjW0bJJDFf6KaSLwXgP8rFIiOlbUFnywU9jDGwtsHPKAYg3URLfpVedTYuzH6P3rZAtyvV+P2OcQ0+8f9XH4dl+sQ2szOexzgDvQdlbIfwAhTEEfwLFuJCeKQUlxoL3IB/XEqpHn+XGXcIoq3X8OHaOcez7V1ZMBfT7S2gfTTV5r9o9YEIH93cxfCR3xuENnELOj48WZ/8KrPSi0wK9T3kitHkuyO46hbf7Y+ovfpYY6aTqdpaP9Ok+YvwBnzwuRvLQgwJRCv+HqAwp4N0YE1sHoEZxAOJNlNRvYb26x9z714SX3remPwcJPfOfkzjeas5eYcialnmnX94tvxUxrsXZx6GIPSiLekXYT6CwhuIjkM8b6U0rylPgiMRuJbTI5dxlHW3FoxzHS/KGL8p0vPSh969FX+qvOKfm70Vx5blYkNrG4VukhLRbnP17sJXxZPdeZd/huxhVpWmxwuk+3kAirDYE47fiG73odArVeEGAnfD6wmP3LDeuiZHeleVUxRr1lbdP/BrmTKZ8yCa/Bf/45c56WIc+DIcWhIOas79FalgR/C9htQDOJf2Hn8LQhbsF1vLPfJIRp/J3oT477j+Fex62OHvGE/uIjobiI5BPguND8U6iEnk0QUHOoXKMxrsxJqYGCIepTHzhUIM0zivvW1La8vVuq9XEvxnVVvorW/x9OH018+m8qvn6967wkWSOytN4fMIcQuNjP4b2kbTxHuTjALk1BH8CxbBx8UsoMZPw81j6LSdSePZZp9fi7EMxymgdL46VM+i57jUg8Sgv9SMHzqeas2+Q5irG/xLaR1NNKwGjbvwUho/kzjy8gVPIWXb8q7HSy8Y7wNJveR8Vngvd8ixjujuoP3aXLwJcWS5dsIeWbKtOfj8t9/E8sjwvzTxCXv4hSk8KeDfGxHQehcMkLL5wePq8qldGkn8J6TLVZGPrP/wUho8kd/793Tk0yz2FwGt1f4Prt1xM3W81n06ELAxBZpwE2XD2xTQmy/UEimEh8Fv4PtH/pP/ClSDG15x9B20oOrY4+4wRI7mLgtP+xoeiHxSO0UapN9CaE+WDSG8h8ScwxQjHFsiCdqOkh+5oTr8DY+Pmv6A2pYMvDmz/iwLvceqDuh9qHqFGLz8x+W1x9n5sRWC/grJY7C/T3Wpx9jsoxiI80ziUII94D/IxNuHa2yGPtNPxIhV8GE79+PIXMdL5HQHTD1NhcZ7XqKPYM2ctFYXb5HeR/oqz/ww6pySMd2E4SQKFXmk+PqEYRU6WH8LWDmDfYvlCnAsvPJeNk2WF4U6/JDs+AiN8yjYc7y3XMg8LlMYj5i/49rI1g/0ObqM9bpGuQPgTmGKE4+73MUlaSfy7sM6uxdlXGBvX+1ey40Nw6otwvOqPmi/ktA2Yas7+PSjDHlSFFcEXyC0TPgL5PAhvSD9KlAd8BPK5xrqcs9y4Q4y0H3ueRODUJzDK8v6Vbizev153Xm9S6/etOnO6sON/CAmmJHwE8lnLV3PjfhLL7zqv/fTaV96nas5e0C60D/EFPtkvKdvcj6kd8MU6OGUWpouXtQd8BF5MpWe4NM3Fn8AUIxw7IPFpX9lP51HS/7bh6ui93LwVxjk17v0r+i7J7/v61IcRMNlDztayU9r9Fmf/d9jKkP0KqsKKBDfdLfwJFGMRnmkcSpxHvAf5uJZwPbrF2VcYaTpOkh1/AqM871ulX/Lz0Mao37eOuVkqot8fwnzglILwLkwLMC34a39Onz8l36suBZ1D71vmFR6uUh/k96+k1hN9EWmWfijLcy57WR/jtNI7x6/+q0dc15GHj6I0BcVHIJ8WIvERjlcOw2vNBf5BDHk8T7Jc0/vX4rys54x5YLnPXnDqi3CY/+Iu/ny/1KtsJdjPcuPa2PLIfgcjqukSwEcgnx/dvhIXHO9BPj5YgDSFxg8w9dPi/mmeYugvp0w+771XXUPb6eD3iIhJzStYy9Hi7MOQrhzO51QYUgExgOBXkU/zZh4Xr7h/4rMRMKq6svLmT4KgtMGfwCnGu+VRjZRanP0Y7/SfvoPn+1HuZDzLH31+1EJJij1xGffgrkPGv4HOK9XgXRhOksyxAK/5Pqv1YByHtfsWZ7+H+s8phfdglin/vviaj29RH1mWFmffRZITAH8U9Z0geA/y8UGUppD4CORztR4jHK8cRpSaCzwGa+8tzn4JQ470fFUFPmP0TQzwL2ZeQ302zY8YSf1IMPUZvpAp3T/gi1tfctnKmP0KKskKBjfdLXwE8rkIx/QcSlwEvAf5eLCASEt/pGj4Il3vp7cxAiS3q/7w3HPK4D1YttMi/XR6UZL9LDfuY/g2wRhweyGmBVDUg9tLiH+HBO3ByDpNWwjU48b0d0gk4yZe0c3T2P0+1Gcj+6/+ftjuS3Iq/cVX/4UrN87jnss+aUpM84ul+2pketKCkqo5+y6OTCgHWP0BVpjqdPCvwCjfAzDlM3EvJtsvTNEwexMMPEJKOMDn9aDEbPhDFxf3F/3qBUj2kCW5C71WnP0iUnmw/LW7Fmdf48gD2UEM3x/ErdUi1bw8syEu1gX0cz75wy+hCnpQoFsJcPJvUNmi4zPGxbDzi05Q0DXWd89y474BVeQPrLY8C1zuT4LPDVPxEedXLYyk2PF/ilPdzvNbqJAbBUqHK3wE8lmnV/GKzsdnnj7y/D9/3l8tX6nmneXGNbHlkH2DYfA+9Q4pbRw+o6zqFWL/C0hAteAN/Afn17w8U4r1auCfQf14DXXe+nnAKnNrcAEtkyn4COSzTq/mxu2iRNzEe5CPH0JlShlvYtyw4d/hdE75Awsv2tvv29ff95vpRR2WfyTW8pcnx+C+mS8OIK8yL2GkYRE9yMfvgLJiO4mF9yAffwjJoKSR/YI7z99Bof+e57v9ZlHe01uYt6+I7XHmG5mHzL0/T7o2K/I6eOfm/fS65P5T69/9TzE+f36/kS+U6W+lO77fKvf8Hh+m7+8387F7v+A3f+D9e8C3yHeO7f2pX36/9483OfpI0pW7+k9e0996D79p0p2M+Xp1n7yT+0/k3N9478f7736p16C+8L3v0N894Ksk8R3f707uK8Y8fAAn7wAnH9f49/nBf170u/68mOnN1/o+K6+vG3jI0zGfQoIv+7Yp3P9V83N6I7/32P766p3+Hh0O6f+iGfL8y4fD9fHj83Bfb+pG9f6vYfVq8MAnDNP788L8yv40L99ofq9Xv28W4uG2fNqDdf0Tf3NWPvY56+mPjX2vT71fT8b9S8Y17jT96D5rX9dHeAn/j/VfJ+P96P90D3z060f64f43X/3Uv3+2m9vX771m9pP69363nI7JHe/j6kH/o9Tnf/6f//5/X98v/7VvYp0P/r27/N+P3l+K5V/r9/7Wj9f//ve//vf/A/2v9568b9hXAAAAAElFTkSuQmCC">
+            <div style="position: absolute; bottom: 5px; right: 20px; color: #003366; font-size: 0.7rem; font-family: monospace; letter-spacing: 1.5px; opacity: 0.6;">
+                SECURE CIDR GATEWAY // OPS-INTEL-2.4 // SESSION: {datetime.now().strftime('%Y%j%H')}
+            </div>
+        </div>
+    """
+except Exception:
+    header_html = """
+        <div class="fixed-header" style="background-color: #003366; height: 60px; display: flex; align-items: center; padding-left: 20px;">
+            <h1 style="color: white; margin: 0; font-family: 'Poppins', sans-serif; font-size: 1.5rem;">UIDAI Analytics Command Center</h1>
+        </div>
+    """
+
+st.markdown(f"""
     <style>
-    /* Global Typography & Background */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@600;700&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
-    
-    .stApp {
-        background: #F8FAFC;
-    }
-
-    /* Hide Streamlit Native UI and Reset Padding */
-    header, footer, #MainMenu, [data-testid="stDecoration"], [data-testid="stHeader"], [data-testid="stStatusWidget"] {
-        visibility: hidden !important;
-        display: none !important;
-    }
-    
-    /* Aggressive Container Resets to remove large white space */
-    [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section {
-        padding-top: 0 !important;
-        margin-top: 0 !important;
-    }
-    
-    [data-testid="stVerticalBlock"] > div:first-child {
-        margin-top: 0 !important;
-    }
-
-    .main .block-container {
-        padding-top: 45px !important; /* Slightly smaller than header to ensure no gap overlap */
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
-        padding-bottom: 2rem !important;
-        max-width: 100% !important;
-    }
-
-    /* CUSTOM HEADER - NAVY BLUE */
-    .custom-header {
+    /* Fixed Header encompassing full width */
+    .fixed-header {{
         position: fixed;
         top: 0;
         left: 0;
+        width: 100vw;
+        z-index: 9999999;
+        background-color: white;
+        border-bottom: 2px solid #003366;
+    }}
+    .fixed-header img {{
         width: 100%;
-        background-color: #003366;
-        padding: 0 40px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 999999; /* Ensure it stays on top of everything */
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        margin: 0 !important;
-        height: 50px;
-        border-bottom: 2px solid #1a5c99;
-    }
+        height: auto;
+        display: block;
+        max-height: 120px;
+        object-fit: cover;
+    }}
     
-    .header-title {
-        color: #FFFFFF !important;
-        font-size: 1.1rem;
-        font-weight: 700;
-        font-family: 'Poppins', sans-serif;
-        margin: 0;
-        letter-spacing: 0.5px;
-    }
+    /* Hide all Streamlit-specific elements for a custom portal look */
+    header {{visibility: hidden !important;}}
+    footer {{visibility: hidden !important;}}
+    #MainMenu {{visibility: hidden !important;}}
+    [data-testid="stDecoration"] {{display: none !important;}}
+    [data-testid="stHeader"] {{display: none !important;}}
+    [data-testid="stStatusWidget"] {{display: none !important;}}
     
-    .how-it-works-btn {
-        background-color: #7DD3FC;
-        color: #003366 !important;
-        padding: 6px 14px;
-        border-radius: 4px;
-        text-decoration: none !important;
-        font-weight: 700;
-        font-size: 0.8rem;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        border: none;
-    }
-    
-    .how-it-works-btn:hover {
-        background-color: #FFFFFF;
-        transform: translateY(-1px);
-    }
+    /* Push content down to account for fixed header */
+    [data-testid="stSidebar"] {{
+        margin-top: 120px;
+        height: calc(100vh - 120px);
+        background-color: #FDFDFD;
+        border-right: 1px solid #E2E8F0;
+    }}
 
-    /* Sidebars */
-    [data-testid="stSidebar"] {
-        background-color: #FFFFFF !important;
-        border-right: 1px solid #E2E8F0 !important;
-        padding-top: 50px !important;
-    }
+    .block-container {{
+        padding-top: 140px !important;
+    }}
 
-    /* Dashboard Controls Panel */
-    .controls-panel {
-        background: #FFFFFF;
-        border-radius: 12px;
-        padding: 15px 24px;
-        margin-bottom: 20px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        border: 1px solid #E2E8F0;
-    }
-    .controls-title {
-        font-family: 'Poppins', sans-serif;
+    /* --- PREMIUM GOVERNMENT THEME --- */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+    html, body, [class*="css"] {{
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        letter-spacing: -0.01em;
+    }}
+    
+    h1, h2, h3, h4, h5, h6, .section-header {{
+        font-family: 'Poppins', 'Inter', sans-serif;
         font-weight: 600;
-        font-size: 1rem;
-        color: #003366;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .controls-title::before {
-        content: '';
-        width: 3px;
-        height: 16px;
-        background: #003366;
-        border-radius: 2px;
-    }
+    }}
 
-    /* Tabs Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #FFFFFF;
-        border-radius: 8px 8px 0 0;
-        color: #64748B;
-        font-weight: 600;
-        padding: 8px 16px;
-        border: 1px solid #E2E8F0;
-        border-bottom: none;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #003366 !important;
-        color: #FFFFFF !important;
-    }
-    
-    /* Section Headers */
-    .section-header {
-        background: #F1F5F9;
+    .stApp {{
+        background: linear-gradient(135deg, #F8FAFC 0%, #EEF2F7 100%);
+    }}
+
+    /* Metrics Cards */
+    .metric-card {{
+        background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%);
+        padding: 24px;
+        border-radius: 16px;
         border-left: 4px solid #003366;
-        padding: 10px 20px;
-        border-radius: 8px;
-        color: #003366;
-        margin-top: 20px;
-        margin-bottom: 15px;
-        font-weight: 600;
-        font-size: 1rem;
-    }
-
-    /* Metric Cards */
-    .metric-card {
-        background: #FFFFFF;
-        padding: 20px;
-        border-radius: 12px;
-        border-left: 4px solid #003366;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 20px rgba(0, 51, 102, 0.08);
         text-align: center;
+        margin-bottom: 10px;
         height: 100%;
-    }
-    .metric-value {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }}
+    .metric-card:hover {{
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 51, 102, 0.15);
+    }}
+    .metric-value {{
         color: #003366;
-        font-weight: 700;
-        font-size: 2rem;
-    }
-    .metric-label {
+        font-weight: 800;
+        font-size: 2.2rem;
+        line-height: 1.2;
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #003366 0%, #1a5c99 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }}
+    .metric-label {{
         color: #64748B;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
+        margin-top: 8px;
         font-weight: 600;
         text-transform: uppercase;
-        margin-top: 5px;
-    }
+        letter-spacing: 1px;
+    }}
+    
+    /* Tabs Styling */
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 10px;
+        background-color: #ffffff;
+        padding: 10px 10px 0px 10px;
+        border-radius: 10px 10px 0 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }}
+    .stTabs [data-baseweb="tab"] {{
+        background-color: transparent;
+        color: #4A4A4A;
+        font-weight: 600;
+        font-size: 1rem;
+        padding: 10px 20px;
+        flex-grow: 1;
+        justify-content: center;
+    }}
+    .stTabs [aria-selected="true"] {{
+        background-color: #003366 !important;
+        color: #FFFFFF !important;
+        border-bottom: 3px solid #FF9933;
+    }}
+    
+    /* Section Headers */
+    .section-header {{
+        background: linear-gradient(135deg, #E3F2FD 0%, #DBEAFE 100%);
+        border-left: 4px solid #003366;
+        padding: 14px 24px;
+        border-radius: 12px;
+        color: #003366;
+        margin-top: 28px;
+        margin-bottom: 24px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 12px rgba(0, 51, 102, 0.08);
+    }}
 
-    /* Footer Styling */
-    .custom-footer {
+    /* Global Footer */
+    .custom-footer {{
         background-color: #003366;
         color: #FFFFFF;
         padding: 30px 20px;
@@ -201,17 +191,9 @@ st.markdown("""
         width: 100%;
         margin-top: 40px;
         border-top: 4px solid #FF9933;
-    }
-    .footer-text {
-        font-size: 0.85rem;
-        opacity: 0.8;
-    }
+    }}
     </style>
-    
-    <div class="custom-header">
-        <h1 class="header-title">UIDAI Analytics Command Center</h1>
-        <a href="#architecture" class="how-it-works-btn">How It Works</a>
-    </div>
+    {header_html}
 """, unsafe_allow_html=True)
 
 
@@ -249,6 +231,112 @@ def format_indian(num):
         return str(num)
 
 
+
+def generate_pdf_report(kpis, recs, insights, scope_name):
+    """
+    Generates a professional 'Commander's Brief' PDF.
+    """
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # 1. Header
+    pdf.set_fill_color(0, 51, 102) # Navy Blue
+    pdf.rect(0, 0, 210, 40, 'F')
+    
+    pdf.set_font("Arial", 'B', 16)
+    pdf.set_text_color(255, 255, 255)
+    pdf.cell(0, 10, "UIDAI EXECUTIVE STRATEGIES & OPERATIONAL DOSSIER", ln=True, align='C')
+    pdf.set_font("Arial", '', 10)
+    pdf.cell(0, 10, f"Scope: {scope_name} | Generated: {datetime.now().strftime('%d %b %Y %H:%M')}", ln=True, align='C')
+    
+    pdf.set_y(45)
+    pdf.set_text_color(220, 38, 38) # Red
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(0, 10, "CONFIDENTIAL // TYPE 2 // INTERNAL OPERATIONS ONLY", border=1, ln=True, align='C')
+    
+    # 2. Strategic Situation Report
+    pdf.set_y(60)
+    pdf.set_text_color(15, 23, 42)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "1. STRATEGIC SITUATION REPORT", ln=True)
+    pdf.ln(2)
+    
+    pdf.set_font("Arial", '', 10)
+    metrics = [
+        ("Total Activity Volume", str(kpis['total'])),
+        ("Daily Operational Avg", str(kpis['daily_avg'])),
+        ("Backlog Clearance Est.", str(kpis.get('backlog', 'Normal'))),
+        ("Child Enrolment Ratio", f"{kpis['child_pct']}%")
+    ]
+    
+    for label, val in metrics:
+        pdf.set_font("Arial", 'B', 10)
+        pdf.cell(50, 8, f"{label}:", border=0)
+        pdf.set_font("Arial", '', 10)
+        pdf.cell(0, 8, val, ln=True)
+    
+    # 3. Recommendations
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "2. RAPID RESPONSE PROTOCOLS", ln=True)
+    pdf.ln(2)
+    
+    for rec in recs:
+        pdf.set_font("Arial", 'B', 10)
+        pdf.set_fill_color(248, 250, 252)
+        pdf.cell(0, 8, f"[{rec['type'].upper()}] {rec['action']}", ln=True, fill=True)
+        pdf.set_font("Arial", '', 9)
+        pdf.multi_cell(0, 6, rec['detail'])
+        pdf.ln(2)
+        
+    # 4. Intelligence Summary
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "3. AUTOMATED INTELLIGENCE SUMMARY", ln=True)
+    pdf.ln(2)
+    
+    pdf.set_font("Arial", '', 9)
+    for insight in insights:
+        pdf.multi_cell(0, 6, f"- {insight['title']}: {insight['text']}")
+        pdf.ln(1)
+        
+    pdf.set_y(-20)
+    pdf.set_font("Arial", 'I', 8)
+    pdf.set_text_color(100, 116, 139)
+    pdf.cell(0, 10, "AUTHORIZED PERSONNEL ONLY | UIDAI DATA GOVERNANCE ACT", align='C')
+    
+    return pdf.output()
+
+def generate_project_docs_pdf():
+    """
+    Generates the 'Ultimate Project Guide' as a downloadable PDF.
+    """
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "ULTIMATE PROJECT GUIDE: UIDAI ANALYTICS COMMAND CENTER", ln=True, align='C')
+    pdf.set_font("Arial", 'B', 12)
+    pdf.set_text_color(100, 116, 139)
+    pdf.cell(0, 10, "Complete Technical & Operational Blueprint", ln=True, align='C')
+    pdf.ln(10)
+    
+    sections = [
+        ("1. PROJECT INTRODUCTION", "Systems designed to monitor national enrolment telemetry, identify bottlenecks, and optimize resource deployment across 28 States and 8 Union Territories."),
+        ("2. MATHEMATICAL FORMULARY", "Includes PSACI (weighted spatial pressure), Holt-Linear Forecasting, and Z-Score Anomaly detection (3-sigma threshold)."),
+        ("3. TECHNICAL ARCHITECTURE", "Python-based statistical engine utilizing NumPy and Pandas for high-speed matrix computation. Built on a Streamlit front-end and Dockerized for maximum security."),
+        ("4. DATA PRIVACY", "Privacy-by-Design mandates ensuring no PII (Aadhaar, Names, Biometrics) is ever processed. Uses only aggregated transaction counts.")
+    ]
+    
+    for title, text in sections:
+        pdf.set_font("Arial", 'B', 12)
+        pdf.set_text_color(0, 51, 102)
+        pdf.cell(0, 10, title, ln=True)
+        pdf.set_font("Arial", '', 10)
+        pdf.set_text_color(15, 23, 42)
+        pdf.multi_cell(0, 6, text)
+        pdf.ln(4)
+        
+    return pdf.output()
 
 def generate_mission_brief_html(kpis, recs, insights, scope_name):
     """
@@ -321,21 +409,48 @@ def generate_mission_brief_html(kpis, recs, insights, scope_name):
 # --- DATA ENGINE ---
 
 @st.cache_data
-def load_and_process_data():
-    GITHUB_RAW_URL = "https://raw.githubusercontent.com/srinivas191206/Uidai-hackathon/main/enrolment_data_main.csv"
-    LOCAL_PATH = "enrolment_data_main.csv"
+def load_and_process_data(dataset_type="Enrolment"):
+    DATA_CONFIG = {
+        "Enrolment": {
+            "local": "enrolment_data_main.csv",
+            "url": "https://raw.githubusercontent.com/srinivas191206/Uidai-hackathon/main/enrolment_data_main.csv",
+            "cols": {'age_0_5': 'age_0_5', 'age_5_17': 'age_5_17', 'age_18_greater': 'age_18_greater'}
+        },
+        "Biometric": {
+            "local": "biometric_data_main.csv",
+            "url": "https://raw.githubusercontent.com/srinivas191206/Uidai-hackathon/main/biometric_data_main.csv",
+            "cols": {'bio_age_5_17': 'age_5_17', 'bio_age_17_': 'age_18_greater'}
+        },
+        "Demographic": {
+            "local": "demographic_data_main.csv",
+            "url": "https://raw.githubusercontent.com/srinivas191206/Uidai-hackathon/main/demographic_data_main.csv",
+            "cols": {'demo_age_5_17': 'age_5_17', 'demo_age_17_': 'age_18_greater'}
+        }
+    }
+    
+    config = DATA_CONFIG.get(dataset_type, DATA_CONFIG["Enrolment"])
+    LOCAL_PATH = config["local"]
+    GITHUB_RAW_URL = config["url"]
     
     try:
-        # Try local first for speed
         if os.path.exists(LOCAL_PATH):
             df = pd.read_csv(LOCAL_PATH)
         else:
-            # Fallback to GitHub Raw for cloud deployment
             df = pd.read_csv(GITHUB_RAW_URL)
             
         df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y', errors='coerce')
         df = df.dropna(subset=['date'])
         
+        # Standardize Columns
+        for old_col, new_col in config["cols"].items():
+            if old_col in df.columns:
+                df[new_col] = df[old_col]
+        
+        # Ensure mapping columns exist
+        for col in ['age_0_5', 'age_5_17', 'age_18_greater']:
+            if col not in df.columns:
+                df[col] = 0
+                
         # 1. Total Enrolment per record
         df['total_activity'] = df['age_0_5'] + df['age_5_17'] + df['age_18_greater']
         
@@ -345,15 +460,8 @@ def load_and_process_data():
         
         return df
     except Exception as e:
-        # Final safety fallback to a direct URL if local check fails
-        try:
-            df = pd.read_csv(GITHUB_RAW_URL)
-            df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y', errors='coerce')
-            df['total_activity'] = df['age_0_5'] + df['age_5_17'] + df['age_18_greater']
-            return df
-        except:
-            st.error(f"Critical Data Load Error: {e}")
-            return pd.DataFrame()
+        st.error(f"Critical Data Load Error ({dataset_type}): {e}")
+        return pd.DataFrame()
 
 @st.cache_data
 def load_geojson():
@@ -399,7 +507,7 @@ def load_geojson():
 
 
 @st.cache_data
-def generate_insights(df, dist_stats, selected_scope, scope_name):
+def generate_insights(df, dist_stats, selected_scope, scope_name, dataset_type="Enrolment"):
     insights = []
     
     # 1. High Level Trend - Demographic Pulse
@@ -407,19 +515,33 @@ def generate_insights(df, dist_stats, selected_scope, scope_name):
     child_count = df['age_0_5'].sum()
     youth_count = df['age_5_17'].sum()
     adult_count = df['age_18_greater'].sum()
-    child_pct = (child_count / total_vol) * 100
     
-    insights.append({
-        "title": "Demographic Pulse",
-        "text": f"Across {scope_name}, child enrolment constitutes **{child_pct:.1f}%** of all activity. "
-                + ("This is below the recommended 15% threshold, indicating a need for targeted Anganwadi drives." if child_pct < 15 else "This indicates healthy saturation in early age groups."),
-        "data": {
-            "0-5 Years": f"{child_count:,.0f}",
-            "5-17 Years": f"{youth_count:,.0f}",
-            "18+ Years": f"{adult_count:,.0f}",
-            "Total": f"{total_vol:,.0f}"
-        }
-    })
+    # Hide child enrolment insights if the dataset doesn't support them
+    if dataset_type == "Enrolment":
+        child_pct = (child_count / total_vol) * 100 if total_vol > 0 else 0
+        insights.append({
+            "title": "Demographic Pulse (Infants)",
+            "text": f"Across {scope_name}, child enrolment constitutes **{child_pct:.1f}%** of all activity. "
+                    + ("This is below the recommended 15% threshold, indicating a need for targeted Anganwadi drives." if child_pct < 15 else "This indicates healthy saturation in early age groups."),
+            "data": {
+                "0-5 Years": f"{child_count:,.0f}",
+                "5-17 Years": f"{youth_count:,.0f}",
+                "18+ Years": f"{adult_count:,.0f}",
+                "Total": f"{total_vol:,.0f}"
+            }
+        })
+    else:
+        # Contextual insight for Biometric/Demographic
+        insights.append({
+            "title": f"Service Distribution Profile ({dataset_type})",
+            "text": f"Analysis of {dataset_type} activity across {scope_name} shows the split between children/youth (5-17) and adults (18+). "
+                    "This identifies whether center capacity is being consumed by mandatory updates or new demographic captures.",
+            "data": {
+                "5-17 Years": f"{youth_count:,.0f}",
+                "18+ Years": f"{adult_count:,.0f}",
+                "Total Volume": f"{total_vol:,.0f}"
+            }
+        })
     
     # 2. Operational Stress
     # 2. Operational Stress (Automated Detection)
@@ -465,6 +587,35 @@ def generate_insights(df, dist_stats, selected_scope, scope_name):
             }
         })
     
+    # 5. Demographic Transition Pressure (NEW)
+    high_dtpi = dist_stats[dist_stats['dtpi'] > 0.6]
+    if not high_dtpi.empty:
+        avg_dtpi = high_dtpi['dtpi'].mean()
+        insights.append({
+            "title": "Adolescent-to-Adult Transition Surge",
+            "text": f"**{len(high_dtpi)} districts** are showing critical transition pressure. High volumes of 5-17s are aging into the mandatory 18+ biometric update cycle. "
+                    "Recommend proactive appointment scheduling for these age brackets.",
+            "data": {
+                "High DTPI Districts": f"{len(high_dtpi)}",
+                "Avg DTPI Ratio": f"{avg_dtpi:.2f}",
+                "Status": "Upcoming Load Surge"
+            }
+        })
+        
+    # 6. Biometric Update Burden (NEW)
+    heavy_bubr = dist_stats[dist_stats['bubr'] > 0.75]
+    if not heavy_bubr.empty:
+        insights.append({
+            "title": "Biometric Update Concentration",
+            "text": f"In **{len(heavy_bubr)} districts**, adult biometric updates/corrections exceed 75% of total center activity. "
+                    "This indicates a 'Maintenance over Growth' phase. Optimize counters for update-specific flows.",
+            "data": {
+                "Affected Districts": f"{len(heavy_bubr)}",
+                "Avg BUBR": f"{heavy_bubr['bubr'].mean():.1%}",
+                "Priority Action": "Service Queue Segregation"
+            }
+        })
+    
     # 4. Concentration Risk
     high_conc = dist_stats[dist_stats['concentration_risk'] > 0.6]
     if not high_conc.empty:
@@ -488,11 +639,22 @@ def generate_insights(df, dist_stats, selected_scope, scope_name):
 
 # --- MAIN APP ---
 
-df = load_and_process_data()
+# --- TOP CONTROL BAR (Filters) ---
+st.markdown('<div class="controls-title">Dashboard Controls</div>', unsafe_allow_html=True)
+
+# Five filters in a row
+col_dataset, col_state, col_district, col_age, col_date = st.columns(5)
+
+with col_dataset:
+    dataset_type = st.selectbox(
+        "Dataset Type",
+        ["Enrolment", "Biometric", "Demographic"],
+        help="Switch between activity datasets"
+    )
+
+df = load_and_process_data(dataset_type)
 if df.empty:
     st.stop()
-
-# --- TOP CONTROL BAR (Filters) ---
 # Dashboard controls panel at the top with all 3 filters
 # REDUNDANT SPACER REMOVED
 pass
@@ -514,11 +676,6 @@ if 'map_select' in st.session_state and st.session_state.map_select:
 def reset_national_view():
     st.session_state['state_selector'] = "All India"
     st.session_state['selected_state_index'] = 0
-
-st.markdown('<div class="controls-title">Dashboard Controls</div>', unsafe_allow_html=True)
-
-# Four filters in a row
-col_state, col_district, col_age, col_date = st.columns(4)
 
 with col_state:
     state_options = ["All India"] + sorted(df['postal_state'].unique().tolist())
@@ -559,11 +716,19 @@ with col_district:
         st.selectbox("District", ["All"], disabled=True, help="Select a state first")
 
 with col_age:
-    age_group_options = {
-        'age_0_5': '0-5 Years (Infants)',
-        'age_5_17': '5-17 Years (Children/Youth)',
-        'age_18_greater': '18+ Years (Adults)'
-    }
+    if dataset_type == "Enrolment":
+        age_group_options = {
+            'age_0_5': '0-5 Years (Infants)',
+            'age_5_17': '5-17 Years (Children/Youth)',
+            'age_18_greater': '18+ Years (Adults)'
+        }
+    else:
+        # Biometric and Demographic datasets don't have 0-5
+        age_group_options = {
+            'age_5_17': '5-17 Years (Children/Youth)',
+            'age_18_greater': '18+ Years (Adults)'
+        }
+        
     age_groups = st.multiselect(
         "Age Groups",
         options=list(age_group_options.keys()),
@@ -630,6 +795,8 @@ total_enrolment = filtered_df['total_activity'].sum()
 
 # Velocity calculation for global cards
 def get_global_velocity(df):
+    if df['date'].nunique() < 7:
+        return None # Suppress velocity for cold-start
     max_date = df['date'].max()
     p1 = df[df['date'] > (max_date - pd.Timedelta(days=30))]['total_activity'].sum()
     p2 = df[(df['date'] <= (max_date - pd.Timedelta(days=30))) & (df['date'] > (max_date - pd.Timedelta(days=60)))]['total_activity'].sum()
@@ -676,6 +843,26 @@ if child_pct < 20:
         "detail": f"Child enrolment ({child_pct:.1f}%) is below target (25%). Partner with WCD Ministry for school/anganwadi camp drives."
     })
 
+# 4. NEW: Demographic Transition Logic (DTPI)
+high_dtpi_count = len(dist_stats_filtered[dist_stats_filtered['dtpi'] > 0.6])
+if high_dtpi_count > 0:
+    recs.append({
+        "type": "Strategic",
+        "icon": "SURGE",
+        "action": "Prepare Load Surge Capacity",
+        "detail": f"{high_dtpi_count} districts show an upcoming load surge (DTPI > 0.6). Prepare additional enrolment capacity for next 6-12 months."
+    })
+
+# 5. NEW: Biometric Update Burden (BUBR)
+bubr_heavy_count = len(dist_stats_filtered[dist_stats_filtered['bubr'] > 0.75])
+if bubr_heavy_count > 0:
+    recs.append({
+        "type": "Operational",
+        "icon": "QUEUE",
+        "action": "Separate Service Queues",
+        "detail": f"{bubr_heavy_count} districts are 'Correction-Heavy' (BUBR > 75%). Recommend separating 'New Enrolment' vs 'Correction' queues."
+    })
+
 # --- OFFICIAL HEADER ---
 # Text header removed as per user request (head.jpg is now the banner)
 # st.markdown("""...""", unsafe_allow_html=True)
@@ -696,10 +883,18 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
 with tab1:
     st.markdown('<div class="section-header">National / State Overview</div>', unsafe_allow_html=True)
     
+    # --- COLD-START CONFIDENCE SUPPRESSION BANNER ---
+    if len(filtered_df['date'].unique()) < 7:
+        st.warning("Insufficient Data Confidence: Selected window has < 7 unique days. Predictive signals suppressed.")
+
     # Closed-Loop Statistical Anomaly & Action Panel
     anomalies = detect_statistical_anomalies(filtered_df)
-    if anomalies:
-        with st.expander(f"Active Incident Monitoring: {scope_name} ({len(anomalies)})", expanded=True):
+    
+    # Equity Risk Filter
+    equity_risk_dists = dist_stats_filtered[dist_stats_filtered['equity_risk_flag']]
+    
+    if anomalies or not equity_risk_dists.empty:
+        with st.expander(f"Active Incident Monitoring: {scope_name} ({len(anomalies) + len(equity_risk_dists)})", expanded=True):
             st.markdown("<div style='font-size: 0.85rem; color: #64748B; margin-bottom: 10px;'>High-confidence deviations identified via <b>Rolling Z-Scores</b>. All anomalies automatically trigger a closed-loop operational workflow.</div>", unsafe_allow_html=True)
             
             # Action Flow Header
@@ -726,6 +921,22 @@ with tab1:
                     <div style='background: {status_color}20; color: {status_color}; padding: 2px 6px; border-radius: 4px; font-weight: 800; text-align: center; border: 1px solid {status_color}40;'>{a['status']}</div>
                 </div>
                 """, unsafe_allow_html=True)
+
+            # Limit to top 5 Equity Risk districts
+            top_equity_risk = equity_risk_dists.head(5)
+            for _, row in top_equity_risk.iterrows():
+                st.markdown(f"""
+                <div style='display: grid; grid-template-columns: 1fr 1fr 2fr 1.5fr 1fr; background: #FFF1F2; padding: 10px; border-bottom: 1px solid #FECDD3; font-size: 0.85rem; align-items: center;'>
+                    <div style='font-weight: 500;'>CRITICAL</div>
+                    <div style='color: #E11D48; font-weight: 700;'>EQUITY RISK</div>
+                    <div style='color: #9F1239;'><b>{row['postal_district']}</b>: High {dataset_type} Saturation Pressure + Access Inequality</div>
+                    <div style='font-style: italic; color: #881337;'>Resource Audit Recommended</div>
+                    <div style='background: #E11D4820; color: #E11D48; padding: 2px 6px; border-radius: 4px; font-weight: 800; text-align: center; border: 1px solid #E11D4840;'>HIGH RISK</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            if len(equity_risk_dists) > 5:
+                st.info(f"Summary: {len(equity_risk_dists) - 5} additional districts identified with elevated equity risk profiles. Full list available in Detailed Reports.")
     else:
         st.success("System Status: Stable. No operational anomalies detected in the current window.")
     
@@ -736,17 +947,22 @@ with tab1:
     avg_act = filtered_df.groupby('date')['total_activity'].sum().mean()
     child_share = child_pct
     
+    # Advanced Metrics
+    avg_dtpi = dist_stats_filtered['dtpi'].mean()
+    avg_bubr = dist_stats_filtered['bubr'].mean()
+    
     c1, c2, c3, c4 = st.columns(4)
+    c5, c6 = st.columns(2)
 
     # Velocity indicators
-    v_arrow = "↑" if global_velocity >= 0 else "↓"
+    v_arrow = "" # Removed emoji
     v_color = "#16A34A" if global_velocity >= 0 else "#EF4444"
-    velocity_html = f"<div style='color: {v_color}; font-size: 0.8rem; font-weight: 700;'>{v_arrow} {abs(global_velocity):.1f}% Velocity</div>"
+    velocity_html = f"<div style='color: {v_color}; font-size: 0.8rem; font-weight: 700;'>{abs(global_velocity):.1f}% Velocity</div>"
 
     # --- MISSION BRIEF GENERATOR ---
     # Generate data for the report
     with st.spinner("Authorizing Secure Connection..."):
-        insights_preview = generate_insights(filtered_df, dist_stats_filtered, selected_state, scope_name)
+        insights_preview = generate_insights(filtered_df, dist_stats_filtered, selected_state, scope_name, dataset_type)
         
         recs_preview = []
         if len(dist_stats_filtered[dist_stats_filtered['demand_score'] > 1.3]) >= 1: 
@@ -762,21 +978,37 @@ with tab1:
         
         brief_html = generate_mission_brief_html(kpis_report, recs_preview, insights_preview, scope_name)
         b64 = base64.b64encode(brief_html.encode()).decode()
-
         
-        # COMMANDER'S DESK (Moved from Sidebar)
-        href = f'<a href="data:file/html;base64,{b64}" download="UIDAI_Mission_Brief_{datetime.now().strftime("%Y%m%d")}.html" style="text-decoration:none;">'
-        st.markdown(f"""
-        <div style="text-align: right; margin-bottom: 10px;">
-            {href}<button title="Download a complete operational dossier including strategic insights, KPI summaries, and automated response protocols for the current scope." style="background-color:#003366; color:white; border:none; padding:8px 16px; border-radius:5px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            Download Executive Strategy Report (PDF Optimized)</button></a>
-        </div>
-        """, unsafe_allow_html=True)
+        # PDF Report Generator
+        try:
+            brief_pdf = generate_pdf_report(kpis_report, recs_preview, insights_preview, scope_name)
+            st.markdown('<div style="text-align: right; margin-bottom: 10px;">', unsafe_allow_html=True)
+            st.download_button(
+                label="Download Executive Strategy Report (PDF Optimized)",
+                data=bytes(brief_pdf),
+                file_name=f"UIDAI_Executive_Report_{datetime.now().strftime('%Y%m%d')}.pdf",
+                mime="application/pdf",
+                key="pdf_report_btn_overview",
+                help="Download a complete formal dossier including strategic insights and automated response protocols."
+            )
+            st.markdown('</div>', unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"Report Generation Error: {e}")
 
-    c1.markdown(f'<div class="metric-card"><div class="metric-value">{format_indian(tot_act)}</div>{velocity_html}<div class="metric-label">National Activity Volume</div></div>', unsafe_allow_html=True)
+    c1.markdown(f'<div class="metric-card"><div class="metric-value">{format_indian(tot_act)}</div>{velocity_html if global_velocity is not None else ""}<div class="metric-label">{dataset_type} Volume</div></div>', unsafe_allow_html=True)
     c2.markdown(f'<div class="metric-card"><div class="metric-value">{format_indian(avg_act)}</div><div class="metric-label">Daily Aggregated Avg</div></div>', unsafe_allow_html=True)
-    c3.markdown(f'<div class="metric-card"><div class="metric-value">{child_share:.1f}%</div><div class="metric-label">Child Enrolment Ratio</div></div>', unsafe_allow_html=True)
+    
+    if dataset_type == "Enrolment":
+        c3.markdown(f'<div class="metric-card"><div class="metric-value">{child_share:.1f}%</div><div class="metric-label">Child Enrolment Ratio</div></div>', unsafe_allow_html=True)
+    else:
+        # Show Youth Ratio for Biometric/Demographic
+        youth_share = (filtered_df['age_5_17'].sum() / total_enrolment * 100) if total_enrolment > 0 else 0
+        c3.markdown(f'<div class="metric-card"><div class="metric-value">{youth_share:.1f}%</div><div class="metric-label">Youth (5-17) Ratio</div></div>', unsafe_allow_html=True)
+        
     c4.markdown(f'<div class="metric-card"><div class="metric-value">{len(dist_stats_filtered)}</div><div class="metric-label">Districts Active</div></div>', unsafe_allow_html=True)
+    
+    c5.markdown(f'<div class="metric-card" style="border-left: 4px solid #F59E0B;"><div class="metric-value">{avg_dtpi:.2f}</div><div class="metric-label">Demographic Transition Pressure (DTPI)</div></div>', unsafe_allow_html=True)
+    c6.markdown(f'<div class="metric-card" style="border-left: 4px solid #10B981;"><div class="metric-value">{avg_bubr:.1%}</div><div class="metric-label">Biometric Update Burden (BUBR)</div></div>', unsafe_allow_html=True)
 
     # --- SIMULATED SYSTEM BOOT ---
     # --- SYSTEM STATUS INDICATOR ---
@@ -815,14 +1047,9 @@ with tab1:
                         <div style='color: #166534; font-size: 0.8rem;'>Saved: {impact['days_saved']:.1f} Days</div>
                     </div>
                 """, unsafe_allow_html=True)
-            else:
-                 st.markdown(f"""
-                    <div style='background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px; text-align: center; opacity: 0.7;'>
-                        <div style='color: #64748B; font-size: 0.8rem; font-weight: 600;'>CURRENT STATUS</div>
-                        <div style='color: #475569; font-size: 1.4rem; font-weight: 800;'>BAU</div>
-                        <div style='color: #64748B; font-size: 0.8rem;'>Adjust sliders to simulate</div>
-                    </div>
-                """, unsafe_allow_html=True)
+        
+        # Simulated impact calculation removed as per user request
+        pass
     
     # Styled section divider
     st.markdown("""
@@ -1092,17 +1319,38 @@ with tab2:
         st.plotly_chart(fig_map, use_container_width=True)
         
     with col_d2:
-        st.subheader("High Demand Districts")
-        st.markdown("Districts exceeding 1.3× National Average")
-        high_stress = dist_stats_filtered[dist_stats_filtered['demand_score'] > 1.3].sort_values('demand_score', ascending=False).head(10)
-        st.dataframe(high_stress[['postal_district', 'demand_score', 'stress_persistence_months']].rename(columns={'stress_persistence_months': 'Peak Load Persistence'}), hide_index=True)
+        st.subheader("High Demand & Pressure Districts")
+        st.markdown("Districts exceeding 1.3× National Average or showing Demographic Surge")
+        
+        # Merge classifications for table display
+        table_df = dist_stats_filtered.sort_values(['demand_score', 'dtpi'], ascending=False).head(15).copy()
+        
+        # Color coding for DTPI Class
+        def color_dtpi(val):
+            if val == "Upcoming Load Surge": return "background-color: #FEE2E2; color: #991B1B;"
+            elif val == "Stable Transition": return "background-color: #FEF3C7; color: #92400E;"
+            else: return "background-color: #ECFDF5; color: #065F46;"
+            
+        st.dataframe(
+            table_df[['postal_district', 'demand_score', 'dtpi', 'dtpi_class', 'bubr']]
+            .rename(columns={
+                'demand_score': 'Demand X', 
+                'dtpi': 'Transition Index',
+                'dtpi_class': 'Classification',
+                'bubr': 'Update Burden'
+            })
+            .style.applymap(color_dtpi, subset=['Classification'])
+            .format({'Demand X': '{:.2f}', 'Transition Index': '{:.2f}', 'Update Burden': '{:.1%}'}),
+            hide_index=True
+        )
         
         # Explanatory info
         st.markdown(""" 
         <div style='background: #F0F9FF; border-left: 3px solid #0EA5E9; padding: 12px 16px; border-radius: 8px; margin-top: 16px; font-size: 0.85rem;'>
-            <strong style='color: #0369A1;'>Understanding This Data</strong><br>
+            <strong style='color: #0369A1;'>Understanding Advanced Indices</strong><br>
             <span style='color: #475569;'><b>Demand Score:</b> Ratio of district activity vs national average (1.0 = average)<br>
-            <b>Stress Months:</b> Count of months where demand exceeded critical threshold</span>
+            <b>DTPI:</b> Transition Pressure (Youth vs Adult ratio). >0.6 indicates upcoming load surge.<br>
+            <b>BUBR:</b> Update Burden. Share of adult biometric corrections/updates.</span>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1242,7 +1490,7 @@ with tab4:
 with tab5:
     st.markdown('<div class="section-header">Automated Policy Narrative Engine</div>', unsafe_allow_html=True)
     
-    insights = generate_insights(filtered_df, dist_stats_filtered, selected_state, scope_name)
+    insights = generate_insights(filtered_df, dist_stats_filtered, selected_state, scope_name, dataset_type)
     
     col_txt, col_kpi = st.columns([2, 1])
     
@@ -1343,17 +1591,17 @@ with tab7:
                     <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>1</div>
                     <div><b>Ingestion Layer:</b> Kafka-based streaming of ECMP (Enrolment Client) logs into <b>Hadoop HDFS / S3 Data Lake</b>.</div>
                 </div>
-                <div style='text-align: center; color: #94A3B8;'>↓</div>
+                <div style='text-align: center; color: #94A3B8;'>|</div>
                 <div style='display: flex; align-items: center; gap: 15px;'>
                     <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>2</div>
                     <div><b>Processing Layer:</b> <b>Apache Spark (Databricks)</b> jobs perform heavy-lift pre-aggregation. Logic calculates Z-Scores, PSACI, and Velocity metrics in parallel.</div>
                 </div>
-                <div style='text-align: center; color: #94A3B8;'>↓</div>
+                <div style='text-align: center; color: #94A3B8;'>|</div>
                 <div style='display: flex; align-items: center; gap: 15px;'>
                     <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>3</div>
                     <div><b>Storage Layer:</b> Aggregated Operational Cubes are stored in an <b>Indexed SQL Warehouse (Postgres/BigQuery)</b> for instant retrieval.</div>
                 </div>
-                <div style='text-align: center; color: #94A3B8;'>↓</div>
+                <div style='text-align: center; color: #94A3B8;'>|</div>
                 <div style='display: flex; align-items: center; gap: 15px;'>
                     <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>4</div>
                     <div><b>Intelligence Layer:</b> This <b>Command Center</b> consumes the indexed cubes via secure APIs, providing real-time Situational Awareness.</div>

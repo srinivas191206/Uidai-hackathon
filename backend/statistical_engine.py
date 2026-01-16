@@ -58,8 +58,9 @@ def detect_statistical_anomalies(df, window=7):
     daily = df.groupby('date')['total_activity'].sum().reset_index()
     daily = daily.sort_values('date')
     
-    if len(daily) < window:
-        return []
+    # --- COLD-START CONFIDENCE SUPPRESSION ---
+    if len(daily) < 7:
+        return [] # Suppress Z-score alerts for cold-start periods
         
     daily['rolling_mean'] = daily['total_activity'].rolling(window=window).mean()
     daily['rolling_std'] = daily['total_activity'].rolling(window=window).std()
@@ -129,6 +130,29 @@ def calculate_psaci_index(df):
     pin_stats['psaci_score'] = (pin_stats['v_norm'] * 0.5 + pin_stats['c_norm'] * 0.5)
     
     return pin_stats.sort_values('psaci_score', ascending=False)
+
+
+def calculate_temporal_impact(df, policy_date):
+    """
+    Computes policy impact over a 14-day pre/post window.
+    Impact = (PostAvg - PreAvg) / PreAvg * 100
+    """
+    policy_dt = pd.to_datetime(policy_date)
+    pre_window = df[(df['date'] >= policy_dt - pd.Timedelta(days=14)) & (df['date'] < policy_dt)]
+    post_window = df[(df['date'] >= policy_dt) & (df['date'] < policy_dt + pd.Timedelta(days=14))]
+    
+    pre_avg = pre_window.groupby('date')['total_activity'].sum().mean() if not pre_window.empty else 0
+    post_avg = post_window.groupby('date')['total_activity'].sum().mean() if not post_window.empty else 0
+    
+    impact = ((post_avg - pre_avg) / (pre_avg + 1e-9)) * 100 if pre_avg > 0 else 0
+    
+    return {
+        "pre_avg": pre_avg,
+        "post_avg": post_avg,
+        "impact_pct": impact,
+        "pre_data": pre_window.groupby('date')['total_activity'].sum().reset_index(),
+        "post_data": post_window.groupby('date')['total_activity'].sum().reset_index()
+    }
 
 
 def simulate_policy_impact(current_daily_capacity, current_backlog, added_capacity_units, center_hours_increase):
@@ -255,6 +279,21 @@ def calculate_district_metrics(df):
             
     conc_df = pd.DataFrame(conc_risks)
     dist_stats = dist_stats.merge(conc_df, on='postal_district', how='left')
+
+    # --- NEW ANALYTICAL MODULES (DTPI, BUBR, EQUITY RISK) ---
+    dist_stats['dtpi'] = dist_stats['age_5_17'] / (dist_stats['age_18_greater'] + 1e-9)
+    dist_stats['bubr'] = dist_stats['age_18_greater'] / (dist_stats['total_activity'] + 1e-9)
+    
+    def classify_dtpi(val):
+        if val > 0.6: return "Upcoming Load Surge"
+        elif val >= 0.3: return "Stable Transition"
+        else: return "Aging-Dominant Region"
+        
+    dist_stats['dtpi_class'] = dist_stats['dtpi'].apply(classify_dtpi)
+    dist_stats['is_correction_heavy'] = dist_stats['bubr'] > 0.75
+    
+    # PSACI placeholder if not in dist_stats, otherwise use existing concentration_risk as proxy
+    dist_stats['equity_risk_flag'] = (dist_stats['concentration_risk'] > 0.7) & (dist_stats['dtpi'] > 0.5)
     
     return dist_stats
 
