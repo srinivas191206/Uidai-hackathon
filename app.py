@@ -554,10 +554,16 @@ def generate_insights(df, dist_stats, selected_scope, scope_name, dataset_type="
         })
     else:
         # Contextual insight for Biometric/Demographic
+        youth_pct = (youth_count / total_vol) * 100 if total_vol > 0 else 0
+        adult_pct = (adult_count / total_vol) * 100 if total_vol > 0 else 0
+        
+        primary_group = "5-17 Years" if youth_count > adult_count else "18+ Years"
+        
         insights.append({
             "title": f"Service Distribution Profile ({dataset_type})",
-            "text": f"Analysis of {dataset_type} activity across {scope_name} shows the split between children/youth (5-17) and adults (18+). "
-                    "This identifies whether center capacity is being consumed by mandatory updates or new demographic captures.",
+            "text": f"Analysis of {dataset_type} activity across {scope_name} shows that **{primary_group}** is the primary driver of volume. "
+                    f"The split is **{youth_pct:.1f}%** for Children/Youth (5-17) and **{adult_pct:.1f}%** for Adults (18+). "
+                    "This identify whether center capacity is being consumed by mandatory updates or new demographic captures.",
             "data": {
                 "5-17 Years": f"{youth_count:,.0f}",
                 "18+ Years": f"{adult_count:,.0f}",
@@ -962,8 +968,7 @@ with tab1:
                 </div>
                 """, unsafe_allow_html=True)
             
-            if len(equity_risk_dists) > 5:
-                st.info(f"Summary: {len(equity_risk_dists) - 5} additional districts identified with elevated equity risk profiles. Full list available in Detailed Reports.")
+
     else:
         st.success("System Status: Stable. No operational anomalies detected in the current window.")
     
