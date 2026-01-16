@@ -942,7 +942,7 @@ with tab1:
                                 line=dict(color='#FF0000', width=2, dash='dot'))
             
             # Policy Simulation Impact overlay
-            if capacity_adj_pct > 0 or extra_hours > 0:
+            if capacity_adj_count > 0 or extra_hours > 0:
                 impact_vals = forecast_vals * (1 + (impact['improvement_pct']/100))
                 fig_line.add_scatter(x=future_dates, y=impact_vals, mode='lines',
                                     name='With Policy Intervention',
