@@ -861,11 +861,12 @@ with tab1:
         sim_col1, sim_col2, sim_col3 = st.columns(3)
         
         with sim_col1:
-            capacity_adj_count = st.number_input("Capacity Adjustment (People)", min_value=0, max_value=1000, value=0, step=10)
-            st.caption("Number of additional personnel/counters to deploy based on demand.")
+            capacity_adj_count = st.number_input("Capacity Adjustment (People)", min_value=0, max_value=50, value=0, step=1)
+            st.caption("Additional personnel to deploy. Max 5 people per center across ~10 centers.")
             
         with sim_col2:
-            extra_hours = st.slider("Extend Center Hours", 0, 4, 0, help="Increase operational hours/day")
+            extra_hours = st.number_input("Extend Center Hours", min_value=0, max_value=4, value=0, step=1)
+            st.caption("Additional operational hours per day.")
             
         # Calculate Impact
         current_daily_capacity = avg_act # Using active daily avg as proxy for capacity
