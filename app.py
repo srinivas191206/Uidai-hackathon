@@ -39,7 +39,54 @@ st.markdown("""
         background-color: #FDFDFD;
         border-right: 1px solid #E2E8F0;
     }
+    
+    /* Custom Header Styling */
+    .custom-header {
+        background: linear-gradient(135deg, #003366 0%, #0052A3 100%);
+        padding: 20px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: -1rem -1rem 2rem -1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .header-title {
+        color: white;
+        font-size: 1.8rem;
+        font-weight: 700;
+        font-family: 'Poppins', sans-serif;
+        margin: 0;
+        letter-spacing: 0.5px;
+    }
+    
+    .how-it-works-btn {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .how-it-works-btn:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-2px);
+    }
     </style>
+""", unsafe_allow_html=True)
+
+# --- HEADER ---
+st.markdown("""
+    <div class="custom-header">
+        <h1 class="header-title">UIDAI Analytics Command Center</h1>
+        <a href="#architecture" class="how-it-works-btn">How It Works</a>
+    </div>
 """, unsafe_allow_html=True)
 
 
