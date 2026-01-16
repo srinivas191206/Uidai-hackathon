@@ -1,5 +1,12 @@
 FROM python:3.9-slim
 
+# Install system dependencies (needed for some python packages like pandas/numpy)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create a non-root user
 RUN useradd -m -u 1000 user
 USER user
@@ -10,12 +17,12 @@ WORKDIR $HOME/app
 
 # Install dependencies
 COPY --chown=user requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir --user --upgrade -r requirements.txt
 
 # Copy application files
 COPY --chown=user . .
 
-# Hugging Face Spaces usually uses port 7860
+# Hugging Face Spaces port
 EXPOSE 7860
 
 # Launch application
