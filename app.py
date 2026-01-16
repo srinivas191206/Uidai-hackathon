@@ -645,6 +645,7 @@ def calculate_district_metrics(df):
 
 # --- 11. REAL ANALYTICS ENGINE (New Implementation) ---
 
+@st.cache_data
 def calculate_forecast_holt_winters(series, n_preds=15):
     """
     Implements a robust Trend + Seasonality forecast using Numpy.
@@ -687,6 +688,7 @@ def calculate_forecast_holt_winters(series, n_preds=15):
         
     return np.array(predictions)
 
+@st.cache_data
 def detect_statistical_anomalies(df, window=7):
     """
     Identifies high-confidence operational anomalies using rolling Z-scores.
@@ -732,6 +734,7 @@ def detect_statistical_anomalies(df, window=7):
         })
     return results
 
+@st.cache_data
 def calculate_psaci_index(df):
     """
     Calculates Pincode Service Access Concentration Index (PSACI).
@@ -808,6 +811,7 @@ def simulate_policy_impact(current_daily_capacity, current_backlog, added_capaci
 # --- AUTOMATED STRATEGIC INSIGHTS ---
 
 
+@st.cache_data
 def generate_insights(df, dist_stats, selected_scope, scope_name):
     insights = []
     
@@ -900,8 +904,6 @@ def generate_insights(df, dist_stats, selected_scope, scope_name):
 df = load_and_process_data()
 if df.empty:
     st.stop()
-
-dist_stats_all = calculate_district_metrics(df)
 
 # --- TOP CONTROL BAR (Filters) ---
 # Dashboard controls panel at the top with all 3 filters
@@ -1009,6 +1011,11 @@ else:
         mask = (df['date'].dt.date == date_range[0])
         df = df.loc[mask]
 
+# --- CRITICAL: CALCULATE METRICS *AFTER* DATE FILTER FOR DYNAMIC INSIGHTS ---
+# This ensures that all downstream stats (Velocity, Demand Score) reflect the selected time window.
+# The function is cached, so if the date range doesn't change, this is instant.
+dist_stats_all = calculate_district_metrics(df)
+
 # Apply Filters
 if selected_state != "All India":
     filtered_df = df[df['postal_state'] == selected_state]
@@ -1019,8 +1026,7 @@ if selected_state != "All India":
         scope_name = selected_state
     
     # Recalculate stats for the filtered view - OPTIMIZED
-    # OLD: dist_stats_filtered = calculate_district_metrics(filtered_df) 
-    # NEW: Just filter the pre-calculated stats. This is much faster and keeps "Demand Score" relative to National Benchmark.
+    # NEW: Filter the PRE-CALCULATED stats (which are now correct for the date range)
     dist_stats_filtered = dist_stats_all[dist_stats_all['postal_state'] == selected_state]
     
     if selected_district != "All":
