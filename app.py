@@ -40,21 +40,36 @@ st.markdown("""
         border-right: 1px solid #E2E8F0;
     }
     
-    /* Custom Header Styling */
+    /* Fixed Header Positioning */
+    [data-testid="stHeader"] {
+        display: none !important;
+    }
+    
+    .block-container {
+        padding-top: 50px !important; /* Small padding as header is now very slim */
+        padding-bottom: 100px !important;
+    }
+
+    /* Custom Header Styling - FIXED and FULL WIDTH */
     .custom-header {
-        background: linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 100%);
-        padding: 15px 40px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: #F8FAFC; /* Almost white light blue */
+        padding: 10px 40px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin: -1rem -1rem 1rem -1rem;
-        box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+        z-index: 999999;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         border-bottom: 1px solid #E2E8F0;
+        margin: 0 !important;
     }
     
     .header-title {
         color: #003366;
-        font-size: 1.5rem;
+        font-size: 1.2rem;
         font-weight: 700;
         font-family: 'Poppins', sans-serif;
         margin: 0;
@@ -62,20 +77,42 @@ st.markdown("""
     }
     
     .how-it-works-btn {
-        background-color: #003366;
-        color: white;
-        padding: 8px 16px;
+        background-color: #BAE6FD; /* Light Blue */
+        color: #003366; /* Dark Blue Text */
+        padding: 6px 14px;
         border-radius: 6px;
         text-decoration: none;
         font-weight: 600;
-        font-size: 0.85rem;
-        transition: all 0.3s ease;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
         cursor: pointer;
+        border: 1px solid #7DD3FC;
     }
     
     .how-it-works-btn:hover {
-        background-color: #0052A3;
+        background-color: #7DD3FC;
         transform: translateY(-1px);
+    }
+
+    /* Footer Styling */
+    .custom-footer {
+        background-color: #003366;
+        color: #FFFFFF;
+        padding: 40px 20px;
+        text-align: center;
+        position: relative;
+        width: 100%;
+        margin-top: 50px;
+        border-top: 5px solid #FF9933; /* Saffron accent */
+    }
+    .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .footer-text {
+        font-size: 0.9rem;
+        opacity: 0.8;
+        margin: 5px 0;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -1488,5 +1525,18 @@ with tab7:
         **Explainability:** Every index (Demand Score, PSACI) follows documented statistical formulas, ensuring all administrative actions are defensible under audit.
         """)
 
-st.markdown("---")
-st.caption("UIDAI Internal Command Center Prototype | Secured for Operational Use | Version 2.4.0-HARDENED")
+# --- FOOTER ---
+st.markdown("""
+    <div class="custom-footer">
+        <div class="footer-content">
+            <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 15px;">UIDAI Analytics Command Center</div>
+            <div class="footer-text">Internal Decision Support System | Secure Operational Portal</div>
+            <div class="footer-text" style="margin-top: 15px; font-size: 0.8rem; opacity: 0.6;">
+                © 2026 Unique Identification Authority of India (UIDAI) | Version 2.5.0-STABLE
+            </div>
+            <div style="margin-top: 20px; font-size: 0.75rem; color: #FF9933; font-weight: 600; letter-spacing: 1px;">
+                GOVERNMENT OF INDIA
+            </div>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
