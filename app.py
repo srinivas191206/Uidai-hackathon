@@ -269,7 +269,7 @@ def generate_mission_brief_html(kpis, recs, insights, scope_name):
         <div class="confidential">CONFIDENTIAL // TYPE 2 // INTERNAL OPERATIONS ONLY</div>
         
         <div class="header">
-            <h1>UIDAI ANALYTICS COMMAND BRIEF</h1>
+            <h1>UIDAI EXECUTIVE STRATEGIES & OPERATIONAL DOSSIER</h1>
             <p><strong>Scope:</strong> {scope_name} | <strong>Generated:</strong> {datetime.now().strftime('%d %b %Y %H:%M')}</p>
         </div>
         
@@ -768,8 +768,8 @@ with tab1:
         href = f'<a href="data:file/html;base64,{b64}" download="UIDAI_Mission_Brief_{datetime.now().strftime("%Y%m%d")}.html" style="text-decoration:none;">'
         st.markdown(f"""
         <div style="text-align: right; margin-bottom: 10px;">
-            {href}<button style="background-color:#003366; color:white; border:none; padding:8px 16px; border-radius:5px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            Generate Operational Intelligence Brief</button></a>
+            {href}<button title="Download a complete operational dossier including strategic insights, KPI summaries, and automated response protocols for the current scope." style="background-color:#003366; color:white; border:none; padding:8px 16px; border-radius:5px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            Download Executive Strategy Report (PDF Optimized)</button></a>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1184,7 +1184,7 @@ with tab4:
     st.markdown(""" 
     <div style='background: #F5F3FF; border-left: 3px solid #8B5CF6; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px;'>
         <strong style='color: #6D28D9; font-size: 1rem;'>Pincode Service Access Concentration Index (PSACI)</strong><br>
-        <span style='color: #475569; font-size: 0.9rem;'>PSACI is a composite index (0 to 1) calculating access equity by normalizing activity volume and youth dependency ratios. 
+        <span style='color: #475569; font-size: 0.9rem;'>PSACI is a composite index (0 to 1) measuring <b>"Service Friction"</b>. It weight-aggregates demand intensity (40%), child enrolment imbalance (30%), and operational volatility (30%). 
         <b>Note:</b> This uses aggregated proxies; no individual-level PII is exposed.</span>
     </div>
     """, unsafe_allow_html=True)
@@ -1219,10 +1219,12 @@ with tab4:
         st.subheader("Index Methodology")
         st.markdown("""
         <div style='background: #F8FAFC; padding: 10px; border: 1px solid #E2E8F0; border-radius: 5px; font-size: 0.8rem;'>
-            <strong>Components:</strong><br>
-            1. <b>Volume Normalization:</b> Scaling demand intensity.<br>
-            2. <b>Youth Ratio Proxy:</b> Identifying child-heavy pressure.<br>
-            3. <b>Standardization:</b> Min-Max scaling to [0,1].
+            <strong>Composite Formula:</strong><br>
+            PSACI = (Demand Score × 0.4) + (Child Imbalance × 0.3) + (Volatility × 0.3)<br><br>
+            <strong>Interpretation Thresholds:</strong><br>
+            <b>> 0.8:</b> Systemic Blindspot – Infrastructure deficit.<br>
+            <b>0.5 - 0.8:</b> Service Friction – Needs monitoring.<br>
+            <b>< 0.5:</b> Equitable Access – Normal operations.
         </div>
         """, unsafe_allow_html=True)
     
