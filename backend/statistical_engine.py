@@ -203,9 +203,9 @@ def calculate_district_metrics(df):
     
     # 3. Demand Zones
     def classify_zone(score):
-        if score > 1.3: return 'High (Red) 🔴'
-        elif score < 0.8: return 'Low (Blue) 🔵'
-        else: return 'Medium (Yellow) 🟡'
+        if score > 1.3: return 'High (Red)'
+        elif score < 0.8: return 'Low (Blue)'
+        else: return 'Medium (Yellow)'
     dist_stats['demand_zone'] = dist_stats['demand_score'].apply(classify_zone)
     
     # 4. Child Enrolment Ratio
@@ -267,9 +267,9 @@ def perform_custom_clustering(df, n_clusters=3):
         # Fallback for single district or small count selection
         labels = []
         for _, row in df.iterrows():
-            if row['demand_score'] > 1.3: labels.append('High-Intensity Operations 🔴')
-            elif row['demand_score'] < 0.8: labels.append('Low-Enrolment / Outreach Needed 🔵')
-            else: labels.append('Steady State / Monitoring 🟡')
+            if row['demand_score'] > 1.3: labels.append('High-Intensity Operations')
+            elif row['demand_score'] < 0.8: labels.append('Low-Enrolment / Outreach Needed')
+            else: labels.append('Steady State / Monitoring')
         return labels
 
     # Features to cluster on
@@ -313,8 +313,8 @@ def perform_custom_clustering(df, n_clusters=3):
     mean_scores.sort(key=lambda x: x[1], reverse=True)
     
     # Map to semantic segments (ADMINISTRATIVE / ACTION-ORIENTED)
-    cluster_map[mean_scores[0][0]] = 'High-Intensity Operations 🔴' # Critical
-    cluster_map[mean_scores[1][0]] = 'Steady State / Monitoring 🟡'   # Stable
-    cluster_map[mean_scores[2][0]] = 'Low-Enrolment / Outreach Needed 🔵' # Low Activity
+    cluster_map[mean_scores[0][0]] = 'High-Intensity Operations' # Critical
+    cluster_map[mean_scores[1][0]] = 'Steady State / Monitoring'   # Stable
+    cluster_map[mean_scores[2][0]] = 'Low-Enrolment / Outreach Needed' # Low Activity
     
     return [cluster_map[label] for label in cluster_labels]

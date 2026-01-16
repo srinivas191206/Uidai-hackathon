@@ -19,7 +19,7 @@ from backend.statistical_engine import (
 
 # --- CONFIGURATION & AESTHETICS ---
 # Force rebuild to remove logos
-st.set_page_config(page_title="UIDAI Analytics Command Center", layout="wide", page_icon="🇮🇳")
+st.set_page_config(page_title="UIDAI Analytics Command Center", layout="wide")
 
 # --- STYLING ---
 st.markdown("""
@@ -734,7 +734,7 @@ silent_count = len(dist_stats_filtered[dist_stats_filtered['is_silent_underenrol
 if silent_count > 0:
         recs.append({
         "type": "Warning",
-        "icon": "⚠️",
+        "icon": "WARNING",
         "action": "Audit Silent Zones",
         "detail": f"{silent_count} districts show suspiciously low activity. Dispatch vigilance teams to inspect center operational status."
     })
@@ -768,10 +768,10 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
 with tab1:
     st.markdown('<div class="section-header">National / State Overview</div>', unsafe_allow_html=True)
     
-    # 1️⃣ Closed-Loop Statistical Anomaly & Action Panel
+    # Closed-Loop Statistical Anomaly & Action Panel
     anomalies = detect_statistical_anomalies(filtered_df)
     if anomalies:
-        with st.expander(f"🛡️ Active Incident Monitoring: {scope_name} ({len(anomalies)})", expanded=True):
+        with st.expander(f"Active Incident Monitoring: {scope_name} ({len(anomalies)})", expanded=True):
             st.markdown("<div style='font-size: 0.85rem; color: #64748B; margin-bottom: 10px;'>High-confidence deviations identified via <b>Rolling Z-Scores</b>. All anomalies automatically trigger a closed-loop operational workflow.</div>", unsafe_allow_html=True)
             
             # Action Flow Header
@@ -824,7 +824,7 @@ with tab1:
         if len(dist_stats_filtered[dist_stats_filtered['demand_score'] > 1.3]) >= 1: 
             recs_preview.append({"type": "Critical", "icon": "🚨", "action": "Initiate Rapid Deployment", "detail": "High demand detected. Mobilize dynamic resources."})
         if len(dist_stats_filtered[dist_stats_filtered['is_silent_underenrolment']]) > 0:
-            recs_preview.append({"type": "Warning", "icon": "⚠️", "action": "Audit Silent Zones", "detail": "Suspicious low activity detected."})
+            recs_preview.append({"type": "Warning", "icon": "WARNING", "action": "Audit Silent Zones", "detail": "Suspicious low activity detected."})
             
         kpis_report = {
             "total": format_indian(tot_act),
@@ -856,8 +856,8 @@ with tab1:
         st.session_state['system_ready'] = True
     
     # --- POLICY SIMULATOR (DECISION SUPPORT) ---
-    with st.expander("🛠️ Decision Support System (Policy Simulator)", expanded=True):
-        st.markdown("##### ⚡ Dynamic Enrolment Capacity Rebalancing System")
+    with st.expander("Decision Support System (Policy Simulator)", expanded=True):
+        st.markdown("##### Dynamic Enrolment Capacity Rebalancing System")
         sim_col1, sim_col2, sim_col3 = st.columns(3)
         
         with sim_col1:
@@ -913,7 +913,7 @@ with tab1:
             font-weight: 600;
             letter-spacing: 1px;
             text-transform: uppercase;
-        '>📊 Strategic Analytics & Forecasting</span>
+        '> Strategic Analytics & Forecasting</span>
     </div>
     """, unsafe_allow_html=True)
     
@@ -1146,8 +1146,8 @@ with tab2:
             hover_data=['stress_persistence_months', 'volatility_score'],
             title="District Performance Clusters (Algorithmic Segmentation)",
             color_discrete_map={
-                'Critical Care Zone 🔴': '#EF4444', 
-                'Monitoring Zone 🟡': '#F59E0B', 
+                'Critical Care Zone': '#EF4444', 
+                'Monitoring Zone': '#F59E0B', 
                 'Stable Zone 🟢': '#10B981'
             }
         )
@@ -1162,7 +1162,7 @@ with tab2:
         # Explanatory info
         st.markdown(""" 
         <div style='background: #F0F9FF; border-left: 3px solid #0EA5E9; padding: 12px 16px; border-radius: 8px; margin-top: 16px; font-size: 0.85rem;'>
-            <strong style='color: #0369A1;'>📊 Understanding This Data</strong><br>
+            <strong style='color: #0369A1;'>Understanding This Data</strong><br>
             <span style='color: #475569;'><b>Demand Score:</b> Ratio of district activity vs national average (1.0 = average)<br>
             <b>Stress Months:</b> Count of months where demand exceeded critical threshold</span>
         </div>
@@ -1193,7 +1193,7 @@ with tab3:
 
     # --- TRIVARIATE ANALYSIS (Deep Dive) ---
     st.markdown("---")
-    st.subheader("📊 Multi-Dimensional Analysis (Trivariate)")
+    st.subheader("Multi-Dimensional Analysis (Trivariate)")
     st.markdown("**Demographic Heatmap Matrix:** Visualizing *Activity Intensity* across **Districts** (Y) and **Time** (X), colored by **Child Enrolment Ratio**.")
     
     # Prepare Data for Heatmap
@@ -1394,7 +1394,7 @@ with tab7:
     
     with arch_col1:
         st.markdown("""
-        ### 🏗️ Scalable Production Pipeline
+        ### Scalable Production Pipeline
         This dashboard serves as the **Presentation & Decision Layer** of a multi-stage big data pipeline. It is intentionally decoupled from raw data ingestion to ensure sub-second query performance at national scale.
         
         <div style='padding: 24px; background: white; border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'>
@@ -1403,17 +1403,17 @@ with tab7:
                     <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>1</div>
                     <div><b>Ingestion Layer:</b> Kafka-based streaming of ECMP (Enrolment Client) logs into <b>Hadoop HDFS / S3 Data Lake</b>.</div>
                 </div>
-                <div style='text-align: center; color: #94A3B8;'>⬇️</div>
+                <div style='text-align: center; color: #94A3B8;'>↓</div>
                 <div style='display: flex; align-items: center; gap: 15px;'>
                     <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>2</div>
                     <div><b>Processing Layer:</b> <b>Apache Spark (Databricks)</b> jobs perform heavy-lift pre-aggregation. Logic calculates Z-Scores, PSACI, and Velocity metrics in parallel.</div>
                 </div>
-                <div style='text-align: center; color: #94A3B8;'>⬇️</div>
+                <div style='text-align: center; color: #94A3B8;'>↓</div>
                 <div style='display: flex; align-items: center; gap: 15px;'>
                     <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>3</div>
                     <div><b>Storage Layer:</b> Aggregated Operational Cubes are stored in an <b>Indexed SQL Warehouse (Postgres/BigQuery)</b> for instant retrieval.</div>
                 </div>
-                <div style='text-align: center; color: #94A3B8;'>⬇️</div>
+                <div style='text-align: center; color: #94A3B8;'>↓</div>
                 <div style='display: flex; align-items: center; gap: 15px;'>
                     <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>4</div>
                     <div><b>Intelligence Layer:</b> This <b>Command Center</b> consumes the indexed cubes via secure APIs, providing real-time Situational Awareness.</div>
