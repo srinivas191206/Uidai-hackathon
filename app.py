@@ -515,7 +515,6 @@ def reset_national_view():
     st.session_state['state_selector'] = "All India"
     st.session_state['selected_state_index'] = 0
 
-st.markdown('<div class="controls-panel">', unsafe_allow_html=True)
 st.markdown('<div class="controls-title">Dashboard Controls</div>', unsafe_allow_html=True)
 
 # Four filters in a row
@@ -585,7 +584,8 @@ with col_date:
         help="Filter data by specific time period"
     )
 
-st.markdown('</div>', unsafe_allow_html=True)
+# PANEL CLOSING REMOVED AS IT WAS CREATING WHITESPACE
+pass
 
 # Apply Date Filter First (Global)
 if len(date_range) == 2:
