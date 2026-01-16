@@ -928,8 +928,8 @@ def reset_national_view():
 st.markdown('<div class="controls-panel">', unsafe_allow_html=True)
 st.markdown('<div class="controls-title">Dashboard Controls</div>', unsafe_allow_html=True)
 
-# Three filters in a row
-col_state, col_district, col_age = st.columns(3)
+# Four filters in a row
+col_state, col_district, col_age, col_date = st.columns(4)
 
 with col_state:
     state_options = ["All India"] + sorted(df['postal_state'].unique().tolist())
@@ -983,7 +983,31 @@ with col_age:
         help="Filter by demographic age groups"
     )
 
+with col_date:
+    min_date = df['date'].min().date()
+    max_date = df['date'].max().date()
+    
+    date_range = st.date_input(
+        "Date Range",
+        value=(min_date, max_date),
+        min_value=min_date,
+        max_value=max_date,
+        help="Filter data by specific time period"
+    )
+
 st.markdown('</div>', unsafe_allow_html=True)
+
+# Apply Date Filter First (Global)
+if len(date_range) == 2:
+    start_date, end_date = date_range
+    # Convert to datetime64[ns] to match df['date']
+    mask = (df['date'].dt.date >= start_date) & (df['date'].dt.date <= end_date)
+    df = df.loc[mask]
+else:
+    # Handle single date selection edge case if user picks one date
+    if len(date_range) > 0:
+        mask = (df['date'].dt.date == date_range[0])
+        df = df.loc[mask]
 
 # Apply Filters
 if selected_state != "All India":
