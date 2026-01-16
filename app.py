@@ -1397,7 +1397,7 @@ with tab1:
                         lon=label_lons,
                         text=label_texts,
                         mode='text',
-                        textfont=dict(size=12, color='#000000', family='Poppins, sans-serif'),
+                        textfont=dict(size=12, color='#000000', family='Poppins, sans-serif'), # Fix applied
                         showlegend=False,
                         hoverinfo='skip'
                     ))
