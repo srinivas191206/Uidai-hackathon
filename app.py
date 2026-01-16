@@ -42,18 +42,19 @@ st.markdown("""
     
     /* Custom Header Styling */
     .custom-header {
-        background: linear-gradient(135deg, #003366 0%, #0052A3 100%);
-        padding: 20px 40px;
+        background: linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 100%);
+        padding: 15px 40px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin: -1rem -1rem 2rem -1rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin: -1rem -1rem 1rem -1rem;
+        box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+        border-bottom: 1px solid #E2E8F0;
     }
     
     .header-title {
-        color: white;
-        font-size: 1.8rem;
+        color: #003366;
+        font-size: 1.5rem;
         font-weight: 700;
         font-family: 'Poppins', sans-serif;
         margin: 0;
@@ -61,22 +62,20 @@ st.markdown("""
     }
     
     .how-it-works-btn {
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: #003366;
         color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
+        padding: 8px 16px;
+        border-radius: 6px;
         text-decoration: none;
         font-weight: 600;
-        font-size: 0.95rem;
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        font-size: 0.85rem;
         transition: all 0.3s ease;
         cursor: pointer;
     }
     
     .how-it-works-btn:hover {
-        background-color: rgba(255, 255, 255, 0.3);
-        border-color: rgba(255, 255, 255, 0.5);
-        transform: translateY(-2px);
+        background-color: #0052A3;
+        transform: translateY(-1px);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -656,7 +655,7 @@ with col_state:
             )
          with reset_col:
              st.markdown('<div style="margin-top: 28px;"></div>', unsafe_allow_html=True)
-             st.button("❌", help="Reset to National View", on_click=reset_national_view)
+             st.button("Reset", help="Reset to National View", on_click=reset_national_view)
     else:
         selected_state = st.selectbox(
             "State / Region", 
@@ -771,7 +770,7 @@ high_demand_count = len(dist_stats_filtered[dist_stats_filtered['demand_score'] 
 if high_demand_count >= 1:
     recs.append({
         "type": "Critical",
-        "icon": "🚨",
+        "icon": "CRITICAL",
         "action": "Initiate Rapid Deployment Protocol",
         "detail": f"High demand detected in {high_demand_count} districts. Mobilize dynamic resource units to reduce wait times below 20 minutes."
     })
@@ -790,7 +789,7 @@ if silent_count > 0:
 if child_pct < 20:
         recs.append({
         "type": "Strategic",
-        "icon": "👶",
+        "icon": "CHILD",
         "action": "Anganwadi Outreach Campaign",
         "detail": f"Child enrolment ({child_pct:.1f}%) is below target (25%). Partner with WCD Ministry for school/anganwadi camp drives."
     })
@@ -846,7 +845,7 @@ with tab1:
                 </div>
                 """, unsafe_allow_html=True)
     else:
-        st.success("✅ System Status: Stable. No operational anomalies detected in the current window.")
+        st.success("System Status: Stable. No operational anomalies detected in the current window.")
     
     
     # Metrics
@@ -869,7 +868,7 @@ with tab1:
         
         recs_preview = []
         if len(dist_stats_filtered[dist_stats_filtered['demand_score'] > 1.3]) >= 1: 
-            recs_preview.append({"type": "Critical", "icon": "🚨", "action": "Initiate Rapid Deployment", "detail": "High demand detected. Mobilize dynamic resources."})
+            recs_preview.append({"type": "Critical", "icon": "CRITICAL", "action": "Initiate Rapid Deployment", "detail": "High demand detected. Mobilize dynamic resources."})
         if len(dist_stats_filtered[dist_stats_filtered['is_silent_underenrolment']]) > 0:
             recs_preview.append({"type": "Warning", "icon": "WARNING", "action": "Audit Silent Zones", "detail": "Suspicious low activity detected."})
             
@@ -888,7 +887,7 @@ with tab1:
         st.markdown(f"""
         <div style="text-align: right; margin-bottom: 10px;">
             {href}<button style="background-color:#003366; color:white; border:none; padding:8px 16px; border-radius:5px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            🔒 Generate Operational Intelligence Brief</button></a>
+            Generate Operational Intelligence Brief</button></a>
         </div>
         """, unsafe_allow_html=True)
 
@@ -976,7 +975,7 @@ with tab1:
         
         # Create base figure
         fig_line = px.line(daily, x='date', y=['total_activity', 'age_0_5', 'age_18_greater'], 
-                          title="Temporal Trends & Predictive Analytics 🧠", color_discrete_sequence=['#2563EB', '#F59E0B', '#10B981'])
+                          title="Temporal Trends and Predictive Analytics", color_discrete_sequence=['#2563EB', '#F59E0B', '#10B981'])
         
         # Add REAL Prediction (Holt-Winters Approx)
         if len(daily) > 5:
@@ -1067,6 +1066,7 @@ with tab1:
                 state_map_corrections = {
                     'Andaman & Nicobar Islands': 'Andaman and Nicobar Islands',
                     'Jammu & Kashmir': 'Jammu and Kashmir',
+                    'Jammu And Kashmir': 'Jammu and Kashmir',
                     'Dadra & Nagar Haveli And Daman & Diu': 'Dadra and Nagar Haveli and Daman and Diu',
                     'Delhi': 'NCT of Delhi'
                 }
@@ -1114,6 +1114,14 @@ with tab1:
                         'Haryana': (29.0588, 76.0856),
                         'Jammu And Kashmir': (33.7782, 76.5762),
                         'Uttarakhand': (30.0668, 79.0193),
+                        'Arunachal Pradesh': (28.2180, 94.7278),
+                        'Manipur': (24.6637, 93.9063),
+                        'Meghalaya': (25.4670, 91.3662),
+                        'Mizoram': (23.1645, 92.9376),
+                        'Nagaland': (26.1584, 94.5624),
+                        'Tripura': (23.9408, 91.9882),
+                        'Sikkim': (27.5330, 88.5122),
+                        'Ladakh': (34.1526, 77.5771),
                     }
                     
                     label_lats = []
@@ -1134,7 +1142,7 @@ with tab1:
                         lon=label_lons,
                         text=label_texts,
                         mode='text',
-                        textfont=dict(size=12, color='#000000', family='Poppins, sans-serif'), # Fix applied
+                        textfont=dict(size=10, color='#000000', family='Poppins, sans-serif'), # Fix applied
                         showlegend=False,
                         hoverinfo='skip'
                     ))
@@ -1190,12 +1198,13 @@ with tab2:
             color='cluster_label', # Use semantic clusters
             size='total_activity',
             hover_name='postal_district',
-            hover_data=['stress_persistence_months', 'volatility_score'],
+            hover_data={'stress_persistence_months': True, 'volatility_score': True},
+            labels={'stress_persistence_months': 'Peak Load Persistence', 'volatility_score': 'Volatility Score'},
             title="District Performance Clusters (Algorithmic Segmentation)",
             color_discrete_map={
                 'Critical Care Zone': '#EF4444', 
                 'Monitoring Zone': '#F59E0B', 
-                'Stable Zone 🟢': '#10B981'
+                'Stable Zone': '#10B981'
             }
         )
         st.plotly_chart(fig_map, use_container_width=True)
@@ -1204,7 +1213,7 @@ with tab2:
         st.subheader("High Demand Districts")
         st.markdown("Districts exceeding 1.3× National Average")
         high_stress = dist_stats_filtered[dist_stats_filtered['demand_score'] > 1.3].sort_values('demand_score', ascending=False).head(10)
-        st.dataframe(high_stress[['postal_district', 'demand_score', 'stress_persistence_months']], hide_index=True)
+        st.dataframe(high_stress[['postal_district', 'demand_score', 'stress_persistence_months']].rename(columns={'stress_persistence_months': 'Peak Load Persistence'}), hide_index=True)
         
         # Explanatory info
         st.markdown(""" 
@@ -1232,7 +1241,7 @@ with tab3:
         # Explanatory info
         st.markdown(""" 
         <div style='background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;'>
-            <strong style='color: #B45309;'>📋 What is Child Enrolment Ratio?</strong><br>
+            <strong style='color: #B45309;'>What is Child Enrolment Ratio?</strong><br>
             <span style='color: #475569;'>The percentage of 0-5 year age group enrolments compared to total enrolments in a district. 
             Low ratios may indicate potential exclusion of young children.</span>
         </div>
@@ -1240,7 +1249,7 @@ with tab3:
 
     # --- TRIVARIATE ANALYSIS (Deep Dive) ---
     st.markdown("---")
-    st.subheader("Multi-Dimensional Analysis (Trivariate)")
+    st.subheader("trivariate analysis")
     st.markdown("**Demographic Heatmap Matrix:** Visualizing *Activity Intensity* across **Districts** (Y) and **Time** (X), colored by **Child Enrolment Ratio**.")
     
     # Prepare Data for Heatmap
@@ -1279,7 +1288,7 @@ with tab3:
         # Explanatory info
         st.markdown(""" 
         <div style='background: #EFF6FF; border-left: 3px solid #3B82F6; padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;'>
-            <strong style='color: #1D4ED8;'>📋 What is Adult Update Load Index?</strong><br>
+            <strong style='color: #1D4ED8;'>What is Adult Update Load Index?</strong><br>
             <span style='color: #475569;'>Measures the proportion of 18+ age group activities (updates, corrections, biometric renewals) 
             relative to total district operations. High values indicate centres are primarily handling adult updates 
             rather than new enrolments, which may require additional staffing.</span>
@@ -1292,7 +1301,7 @@ with tab4:
     
     st.markdown(""" 
     <div style='background: #F5F3FF; border-left: 3px solid #8B5CF6; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px;'>
-        <strong style='color: #6D28D9; font-size: 1rem;'>📍 Pincode Service Access Concentration Index (PSACI)</strong><br>
+        <strong style='color: #6D28D9; font-size: 1rem;'>Pincode Service Access Concentration Index (PSACI)</strong><br>
         <span style='color: #475569; font-size: 0.9rem;'>PSACI is a composite index (0 to 1) calculating access equity by normalizing activity volume and youth dependency ratios. 
         <b>Note:</b> This uses aggregated proxies; no individual-level PII is exposed.</span>
     </div>
@@ -1339,7 +1348,7 @@ with tab4:
     # Additional explanation
     st.markdown(""" 
     <div style='background: #ECFDF5; border-left: 3px solid #10B981; padding: 12px 16px; border-radius: 8px; margin-top: 16px; font-size: 0.85rem;'>
-        <strong style='color: #047857;'>💡 Recommended Action</strong><br>
+        <strong style='color: #047857;'>Recommended Action</strong><br>
         <span style='color: #475569;'>Districts with concentration risk >60% should be prioritized for dynamic resource deployment 
         to peripheral pincodes. This helps ensure equitable access to Aadhaar services across all geographic areas.</span>
     </div>
@@ -1374,7 +1383,7 @@ with tab5:
     
     metric_cols = st.columns(4)
     with col_kpi:
-        st.markdown("### 📖 Methodology Reference")
+        st.markdown("### Methodology Reference")
         
         st.markdown(""" 
         <div style='background: #F8FAFC; border: 1px solid #E2E8F0; padding: 16px; border-radius: 10px; margin-bottom: 12px;'>
@@ -1390,7 +1399,7 @@ with tab5:
         <div style='background: #F8FAFC; border: 1px solid #E2E8F0; padding: 16px; border-radius: 10px; margin-bottom: 12px;'>
             <strong style='color: #1E40AF;'>2. Operational Stress Duration</strong><br>
             <span style='color: #64748B; font-size: 0.85rem;'>
-            <b>Formula:</b> Count of months where demand exceeds 1.3× national average<br>
+            <b>Formula:</b> Count of months where demand exceeds 1.3x national average<br>
             <b>Interpretation:</b> Distinguishes chronic infrastructure constraints from temporary demand surges requiring different intervention strategies.
             </span>
         </div>
@@ -1470,7 +1479,7 @@ with tab7:
         """, unsafe_allow_html=True)
         
     with arch_col2:
-        st.markdown("### 🔒 Security & Governance")
+        st.markdown("### Security and Governance")
         st.info("""
         **Data Minimization:** No PII (Name, Address, Biometrics) leaves the UIDAI secure vault. This system operates on **Anonymized Transaction Telemetry**.
         
