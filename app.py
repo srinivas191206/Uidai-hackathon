@@ -23,53 +23,53 @@ st.set_page_config(page_title="UIDAI Analytics Command Center", layout="wide")
 
 # --- STYLING ---
 st.markdown("""
-    <style>
-    /* Hide all Streamlit-specific elements for a clean portal look */
-    header {visibility: hidden !important;}
-    footer {visibility: hidden !important;}
-    #MainMenu {visibility: hidden !important;}
-    [data-testid="stDecoration"] {display: none !important;}
-    [data-testid="stHeader"] {display: none !important;}
+    /* Global Typography & Background */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@600;700&display=swap');
     
-    /* Remove the 'Running...' indicator to look like a managed app */
-    [data-testid="stStatusWidget"] {display: none !important;}
-    
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {
-        background-color: #FDFDFD;
-        border-right: 1px solid #E2E8F0;
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
     }
     
-    /* Fixed Header Positioning */
-    [data-testid="stHeader"] {
+    .stApp {
+        background: #F8FAFC;
+    }
+
+    /* Hide Streamlit Native UI */
+    header, footer, #MainMenu, [data-testid="stDecoration"], [data-testid="stHeader"], [data-testid="stStatusWidget"] {
+        visibility: hidden !important;
         display: none !important;
     }
     
+    /* Content Layout - TIGHT */
     .block-container {
-        padding-top: 50px !important; /* Small padding as header is now very slim */
-        padding-bottom: 100px !important;
+        padding-top: 50px !important; /* Matches exactly the header height */
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        padding-bottom: 0 !important;
+        max-width: 100% !important;
     }
 
-    /* Custom Header Styling - FIXED and FULL WIDTH */
+    /* CUSTOM HEADER - NAVY BLUE */
     .custom-header {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
-        background: #F8FAFC; /* Almost white light blue */
-        padding: 10px 40px;
+        background-color: #003366;
+        padding: 0 40px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        z-index: 999999;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        border-bottom: 1px solid #E2E8F0;
+        z-index: 100000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         margin: 0 !important;
+        height: 50px;
+        border-bottom: 1px solid #1a5c99;
     }
     
     .header-title {
-        color: #003366;
-        font-size: 1.2rem;
+        color: #FFFFFF !important;
+        font-size: 1.1rem;
         font-weight: 700;
         font-family: 'Poppins', sans-serif;
         margin: 0;
@@ -77,42 +77,126 @@ st.markdown("""
     }
     
     .how-it-works-btn {
-        background-color: #BAE6FD; /* Light Blue */
-        color: #003366; /* Dark Blue Text */
+        background-color: #7DD3FC; /* Light Blue */
+        color: #003366 !important;
         padding: 6px 14px;
-        border-radius: 6px;
-        text-decoration: none;
-        font-weight: 600;
+        border-radius: 4px;
+        text-decoration: none !important;
+        font-weight: 700;
         font-size: 0.8rem;
         transition: all 0.2s ease;
         cursor: pointer;
-        border: 1px solid #7DD3FC;
+        border: none;
     }
     
     .how-it-works-btn:hover {
-        background-color: #7DD3FC;
+        background-color: #FFFFFF;
         transform: translateY(-1px);
+    }
+
+    /* Sidebars */
+    [data-testid="stSidebar"] {
+        background-color: #FFFFFF;
+        border-right: 1px solid #E2E8F0;
+        padding-top: 50px; /* Offset for header */
+    }
+
+    /* Dashboard Controls Panel */
+    .controls-panel {
+        background: #FFFFFF;
+        border-radius: 12px;
+        padding: 15px 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid #E2E8F0;
+    }
+    .controls-title {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        color: #003366;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .controls-title::before {
+        content: '';
+        width: 3px;
+        height: 16px;
+        background: #003366;
+        border-radius: 2px;
+    }
+
+    /* Tabs Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: transparent;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #FFFFFF;
+        border-radius: 8px 8px 0 0;
+        color: #64748B;
+        font-weight: 600;
+        padding: 8px 16px;
+        border: 1px solid #E2E8F0;
+        border-bottom: none;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #003366 !important;
+        color: #FFFFFF !important;
+        border: 1px solid #003366 !important;
+    }
+    
+    /* Section Headers */
+    .section-header {
+        background: #F1F5F9;
+        border-left: 4px solid #003366;
+        padding: 10px 20px;
+        border-radius: 8px;
+        color: #003366;
+        margin-top: 20px;
+        margin-bottom: 15px;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    /* Metric Cards */
+    .metric-card {
+        background: #FFFFFF;
+        padding: 20px;
+        border-radius: 12px;
+        border-left: 4px solid #003366;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        text-align: center;
+        height: 100%;
+    }
+    .metric-value {
+        color: #003366;
+        font-weight: 700;
+        font-size: 2rem;
+    }
+    .metric-label {
+        color: #64748B;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-top: 5px;
     }
 
     /* Footer Styling */
     .custom-footer {
         background-color: #003366;
         color: #FFFFFF;
-        padding: 40px 20px;
+        padding: 30px 20px;
         text-align: center;
-        position: relative;
         width: 100%;
-        margin-top: 50px;
-        border-top: 5px solid #FF9933; /* Saffron accent */
-    }
-    .footer-content {
-        max-width: 1200px;
-        margin: 0 auto;
+        margin-top: 40px;
+        border-top: 4px solid #FF9933;
     }
     .footer-text {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         opacity: 0.8;
-        margin: 5px 0;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -127,253 +211,8 @@ st.markdown("""
 
 
 
-# Custom Color Palette
-# Custom CSS for Government Professional Theme
-st.markdown("""
-    <style>
-    /* Import Premium Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-
-    html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        letter-spacing: -0.01em;
-    }
-    
-    h1, h2, h3, h4, h5, h6, .main-header h1, .section-header {
-        font-family: 'Poppins', 'Inter', sans-serif;
-        font-weight: 600;
-    }
-
-    /* Background Color */
-    .stApp {
-        background: linear-gradient(135deg, #F8FAFC 0%, #EEF2F7 100%);
-    }
-
-    /* Header Styling */
-    .main-header {
-        background-color: #003366; /* Navy Blue */
-        padding: 1.5rem 2rem;
-        border-radius: 0px 0px 10px 10px;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        display: flex;
-        align-items: center;
-        justify_content: space-between;
-    }
-    .main-header h1 {
-        color: #FFFFFF;
-        margin: 0;
-        font-size: 2.2rem;
-        font-weight: 700;
-        letter-spacing: 1px;
-    }
-    .main-header h3 {
-        color: #FF9933; /* Saffron */
-        margin: 0;
-        font-size: 1rem;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        font-weight: 500;
-        margin-top: 5px;
-    }
-
-    /* Metrics Cards - Custom HTML */
-    .metric-card {
-        background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%);
-        padding: 24px;
-        border-radius: 16px;
-        border-left: 4px solid #003366;
-        box-shadow: 0 4px 20px rgba(0, 51, 102, 0.08);
-        text-align: center;
-        margin-bottom: 10px;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
-    .metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #003366, #FF9933);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 30px rgba(0, 51, 102, 0.15);
-    }
-    .metric-card:hover::before {
-        opacity: 1;
-    }
-    .metric-value {
-        color: #003366;
-        font-weight: 800;
-        font-size: 2.2rem;
-        line-height: 1.2;
-        font-family: 'Poppins', sans-serif;
-        background: linear-gradient(135deg, #003366 0%, #1a5c99 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    .metric-label {
-        color: #64748B;
-        font-size: 0.85rem;
-        margin-top: 8px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    /* Dashboard Controls Panel */
-    .controls-panel {
-        background: linear-gradient(145deg, #FFFFFF 0%, #F1F5F9 100%);
-        border-radius: 16px;
-        padding: 20px 28px;
-        margin-bottom: 24px;
-        box-shadow: 0 4px 20px rgba(0, 51, 102, 0.06);
-        border: 1px solid rgba(0, 51, 102, 0.08);
-    }
-    .controls-title {
-        font-family: 'Poppins', sans-serif;
-        font-weight: 600;
-        font-size: 1.1rem;
-        color: #003366;
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .controls-title::before {
-        content: '';
-        width: 4px;
-        height: 20px;
-        background: linear-gradient(180deg, #003366, #FF9933);
-        border-radius: 2px;
-    }
-
-    /* Standard Streamlit Metrics Override (if used elsewhere) */
-    [data-testid="stMetric"] {
-        background-color: #FFFFFF;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 5px solid #003366; /* Accent Border */
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        transition: transform 0.2s;
-    }
-    [data-testid="stMetric"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    [data-testid="stMetricLabel"] {
-        color: #666666;
-        font-size: 0.9rem;
-    }
-    [data-testid="stMetricValue"] {
-        color: #003366;
-        font-weight: 700;
-        font-size: 1.8rem;
-    }
-
-    /* Tabs Styling - Enhanced */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        background-color: #ffffff;
-        padding: 10px 10px 0px 10px;
-        border-radius: 10px 10px 0 0;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: transparent;
-        border-radius: 5px 5px 0 0;
-        color: #4A4A4A;
-        font-weight: 600; /* Bold text */
-        font-size: 1rem; /* Larger text */
-        padding: 10px 20px; /* More clickable area */
-        flex-grow: 1; /* Distribute space evenly */
-        justify-content: center; /* Center text */
-    }
-    .stTabs [data-baseweb="tab"]:hover {
-        color: #003366;
-        background-color: #F0F4F8;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #003366 !important;
-        color: #FFFFFF !important;
-        border-bottom: 3px solid #FF9933; /* Saffron underline for active tab */
-    }
-    
-    /* Section Headers - Premium Style */
-    .section-header {
-        background: linear-gradient(135deg, #E3F2FD 0%, #DBEAFE 100%);
-        border-left: 4px solid #003366;
-        padding: 14px 24px;
-        border-radius: 12px;
-        color: #003366;
-        margin-top: 28px;
-        margin-bottom: 24px;
-        font-weight: 600;
-        font-size: 1.1rem;
-        font-family: 'Poppins', sans-serif;
-        display: flex;
-        align-items: center;
-        box-shadow: 0 2px 12px rgba(0, 51, 102, 0.08);
-        letter-spacing: 0.02em;
-    }
-    
-    /* Selectbox Styling */
-    .stSelectbox > div > div {
-        background: #FFFFFF;
-        border-radius: 10px;
-        border: 1px solid #E2E8F0;
-        font-family: 'Inter', sans-serif;
-    }
-    .stSelectbox label {
-        font-family: 'Inter', sans-serif;
-        font-weight: 500;
-        color: #475569;
-        font-size: 0.9rem;
-    }
-    .stMultiSelect > div > div {
-        background: #FFFFFF;
-        border-radius: 10px;
-        border: 1px solid #E2E8F0;
-    }
-    .stMultiSelect label {
-        font-family: 'Inter', sans-serif;
-        font-weight: 500;
-        color: #475569;
-        font-size: 0.9rem;
-    }
-
-    /* Sidebar Styling */
-    [data-testid="stSidebar"] {
-        background-color: #FFFFFF;
-        border-right: 1px solid #E0E0E0;
-    }
-    
-    /* Hide Default Streamlit Elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;} /* Hide the top decoration bar */
-    
-    /* Remove Top Padding from Main Container to push image to top */
-    .block-container {
-        padding-top: 0rem !important;
-        padding-bottom: 0rem !important;
-        max-width: 100% !important;
-    }
-    
-    </style>
-""", unsafe_allow_html=True)
+# REDUNDANT STYLING REMOVED
+pass
 
 # --- INDIAN NUMBER FORMATTING ---
 def format_indian(num):
@@ -650,7 +489,8 @@ if df.empty:
 
 # --- TOP CONTROL BAR (Filters) ---
 # Dashboard controls panel at the top with all 3 filters
-st.markdown("<br><br><br>", unsafe_allow_html=True)
+# REDUNDANT SPACER REMOVED
+pass
 
 # 1. PROCESS MAP SELECTION EARLY (Fixes state mutation error)
 if 'map_select' in st.session_state and st.session_state.map_select:
