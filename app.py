@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import requests
 import json
 import base64
+import os
 from datetime import datetime
 
 # --- CONFIGURATION & AESTHETICS ---
@@ -77,9 +78,6 @@ st.markdown(f"""
     
     <div class="fixed-header">
         <img src="data:image/jpg;base64,{img}">
-        <div style="position: absolute; bottom: 5px; right: 20px; color: #003366; font-size: 0.7rem; font-family: monospace; letter-spacing: 1.5px; opacity: 0.6;">
-            SECURE CIDR GATEWAY // OPS-INTEL-2.4 // SESSION: {datetime.now().strftime('%Y%j%H')}
-        </div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -532,16 +530,24 @@ def load_and_process_data():
 def load_geojson():
     BASE_URL = "https://raw.githubusercontent.com/srinivas191206/Uidai-hackathon/main/assets/"
     try:
-        # Determine if we use local or remote
-        if os.path.exists("assets/india_states.geojson"):
-            with open("assets/india_states.geojson", "r") as f:
-                states = json.load(f)
-            with open("assets/india_district.geojson", "r") as f:
-                districts = json.load(f)
-        else:
-            # Fetch from GitHub
+        states, districts = None, None
+        
+        # Helper to load and validate JSON
+        def load_safe_json(path):
+            if os.path.exists(path) and os.path.getsize(path) > 1000: # LFS pointers are tiny
+                with open(path, "r") as f:
+                    return json.load(f)
+            return None
+
+        states = load_safe_json("assets/india_states.geojson")
+        districts = load_safe_json("assets/india_district.geojson")
+
+        # Fallback to GitHub if local files are missing or LFS pointers
+        if not states:
             states = requests.get(BASE_URL + "india_states.geojson").json()
+        if not districts:
             districts = requests.get(BASE_URL + "india_district.geojson").json()
+            
         return states, districts
     except Exception as e:
         st.error(f"GeoJSON Load Error: {e}")
