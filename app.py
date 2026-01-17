@@ -1335,7 +1335,7 @@ with tab1:
                      fig_map = px.choropleth(
                         dist_map_agg,
                         geojson=geojson_districts,
-                        featureidkey='properties.district',
+                        featureidkey='properties.NAME_2',
                         locations='postal_district',
                         color='total_activity',
                         color_continuous_scale=custom_color_scale,
