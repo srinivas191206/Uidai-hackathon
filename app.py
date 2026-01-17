@@ -1254,8 +1254,8 @@ with tab1:
                     )
                     fig_map.update_geos(fitbounds="locations", visible=False, projection_scale=1.0)
                     # Enable Selection
-                    fig_map.update_layout(clickmode='event+select', height=800, margin={"r":0,"t":0,"l":0,"b":20},
-                                         coloraxis_colorbar=dict(title="Enrolments", len=0.8), autosize=True)
+                    fig_map.update_layout(clickmode='event+select', height=950, margin={"r":0,"t":0,"l":0,"b":20},
+                                         coloraxis_colorbar=dict(title="Enrolments", len=0.4), autosize=True)
                     
                     # Add State Labels (All India)
                     state_centroids = {
@@ -1340,8 +1340,8 @@ with tab1:
                         labels={'total_activity': 'Enrolments'}
                     )
                      fig_map.update_geos(fitbounds="locations", visible=False, projection_scale=1.0)
-                     fig_map.update_layout(height=800, margin={"r":0,"t":0,"l":0,"b":20},
-                                         coloraxis_colorbar=dict(title="Enrolments", len=0.8), autosize=True)
+                     fig_map.update_layout(height=950, margin={"r":0,"t":0,"l":0,"b":20},
+                                         coloraxis_colorbar=dict(title="Enrolments", len=0.4), autosize=True)
                      st.plotly_chart(fig_map, use_container_width=True)
 
         except Exception as e:
