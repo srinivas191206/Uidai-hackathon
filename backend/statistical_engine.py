@@ -450,6 +450,10 @@ def generate_awareness_impact_data(filtered_df, advertising_month_idx=None):
             if adv_month + 1 < 12:
                 observed_demand[adv_month + 1] += 10
             impact_metrics["insight_type"] = "General Awareness"
+    
+    # CRITICAL: Ensure observed demand never drops below natural demand
+    # Campaigns should only increase demand, never decrease it
+    observed_demand = np.maximum(observed_demand, natural_demand)
 
     # 4. Calculate Risk Score
     capacity = natural_demand.max() * 1.3  # Dynamic capacity based on data

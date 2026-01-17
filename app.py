@@ -1092,17 +1092,48 @@ with tab1:
         # Convert to index
         ad_month_idx = month_options.index(selected_ad_month)
         
+        # Add date range filter for campaign analysis
+        st.markdown("---")
+        st.markdown("**Analysis Period**")
+        
+        # Get min and max dates from filtered_df
+        if 'date' in filtered_df.columns and len(filtered_df) > 0:
+            min_date_available = filtered_df['date'].min()
+            max_date_available = filtered_df['date'].max()
+            
+            campaign_date_range = st.date_input(
+                "Select Date Range",
+                value=(min_date_available, max_date_available),
+                min_value=min_date_available,
+                max_value=max_date_available,
+                key="campaign_date_range"
+            )
+            
+            # Filter data based on selected date range
+            if len(campaign_date_range) == 2:
+                campaign_start, campaign_end = campaign_date_range
+                filtered_df_campaign = filtered_df[
+                    (filtered_df['date'] >= pd.Timestamp(campaign_start)) & 
+                    (filtered_df['date'] <= pd.Timestamp(campaign_end))
+                ].copy()
+            else:
+                filtered_df_campaign = filtered_df.copy()
+        else:
+            filtered_df_campaign = filtered_df.copy()
+        
+        st.markdown("---")
+        
         # Help Box
         st.markdown("""
-        <div style='background: #EFF6FF; padding: 12px; border-radius: 6px; border-left: 3px solid #3B82F6; margin-top: 15px;'>
+        <div style='background: #EFF6FF; padding: 12px; border-radius: 6px; border-left: 3px solid #3B82F6;'>
             <div style='font-size: 0.85em; color: #1E40AF; line-height: 1.5;'>
-                <strong>How it works:</strong> The system compares natural demand patterns (based on current data) with projected demand after a campaign launch. This helps identify optimal timing to avoid service overload.
+                <strong>How it works:</strong> The system compares natural demand patterns (based on selected date range) with projected demand after a campaign launch. This helps identify optimal timing to avoid service overload.
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-    # --- GENERATE DATA ---
-    impact_df, metrics = generate_awareness_impact_data(filtered_df, ad_month_idx)
+    # --- GENERATE DATA (using filtered campaign data) ---
+    impact_df, metrics = generate_awareness_impact_data(filtered_df_campaign, ad_month_idx)
     
     # --- VISUALIZATION (Plotly) ---
     with col_aw2:
@@ -1197,9 +1228,9 @@ with tab1:
     # Extract actual data for the selected month
     month_num = ad_month_idx + 1  # Convert 0-indexed to 1-indexed month
     
-    if 'date' in filtered_df.columns and len(filtered_df) > 0:
+    if 'date' in filtered_df_campaign.columns and len(filtered_df_campaign) > 0:
         # Create a copy and extract month
-        df_month = filtered_df.copy()
+        df_month = filtered_df_campaign.copy()
         df_month['month'] = pd.to_datetime(df_month['date']).dt.month
         df_month['year'] = pd.to_datetime(df_month['date']).dt.year
         
@@ -1230,9 +1261,9 @@ with tab1:
             data_note = ""
         else:
             # No data for this specific month - use estimated values based on overall average
-            total_activity_overall = filtered_df['total_activity'].sum()
+            total_activity_overall = filtered_df_campaign['total_activity'].sum()
             avg_monthly = total_activity_overall / 12  # Rough estimate
-            avg_daily_overall = filtered_df.groupby('date')['total_activity'].sum().mean()
+            avg_daily_overall = filtered_df_campaign.groupby('date')['total_activity'].sum().mean()
             
             total_activity_month = avg_monthly
             avg_daily_month = avg_daily_overall
