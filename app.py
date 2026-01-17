@@ -1202,11 +1202,9 @@ with tab1:
                 
                 # Corrections
                 state_map_corrections = {
-                    'Andaman & Nicobar Islands': 'Andaman and Nicobar Islands',
-                    'Jammu & Kashmir': 'Jammu and Kashmir',
-                    'Jammu And Kashmir': 'Jammu and Kashmir',
-                    'Dadra & Nagar Haveli And Daman & Diu': 'Dadra and Nagar Haveli and Daman and Diu',
-                    'Delhi': 'NCT of Delhi'
+                    'Andaman And Nicobar Islands': 'Andaman & Nicobar',
+                    'Jammu And Kashmir': 'Jammu & Kashmir',
+                    'The Dadra And Nagar Haveli And Daman And Diu': 'Dadra and Nagar Haveli and Daman and Diu'
                 }
                 state_agg['postal_state'] = state_agg['postal_state'].replace(state_map_corrections)
                 
@@ -1250,7 +1248,7 @@ with tab1:
                         'Punjab': (31.1471, 75.3412),
                         'Chhattisgarh': (21.2787, 81.8661),
                         'Haryana': (29.0588, 76.0856),
-                        'Jammu And Kashmir': (33.7782, 76.5762),
+                        'Jammu & Kashmir': (33.7782, 76.5762),
                         'Himachal Pradesh': (31.1048, 77.1734),
                         'Uttarakhand': (30.0668, 79.0193),
                         'Arunachal Pradesh': (28.2180, 94.7278),
@@ -1261,6 +1259,8 @@ with tab1:
                         'Tripura': (23.9408, 91.9882),
                         'Sikkim': (27.5330, 88.5122),
                         'Ladakh': (34.1526, 77.5771),
+                        'Andaman & Nicobar': (11.7401, 92.6586),
+                        'Dadra and Nagar Haveli and Daman and Diu': (20.1809, 73.0169),
                     }
                     
                     label_lats = []
