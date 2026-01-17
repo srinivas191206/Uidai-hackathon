@@ -366,3 +366,93 @@ def perform_custom_clustering(df, n_clusters=3):
     cluster_map[mean_scores[2][0]] = 'Low-Enrolment / Outreach Needed' # Low Activity
     
     return [cluster_map[label] for label in cluster_labels]
+
+def generate_awareness_impact_data(advertising_month_idx=None):
+    """
+    Generates synthetic monthly demand data to demonstrate advertising impact.
+    
+    Args:
+        advertising_month_idx (int): 0-11 representing Jan-Dec. If None, no advertising.
+        
+    Returns:
+        pd.DataFrame: Monthly data with columns [month, natural_demand, observed_demand, impact_flag]
+        dict: Impact metrics {amplification_factor, overload_risk}
+    """
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    
+    # 1. Base Natural Seasonal Curve (Arbitrary units, e.g., '000s)
+    # Peak in May (Month 4) and Oct (Month 9) - typical academic/exam cycles
+    base_demand = np.array([120, 130, 150, 180, 250, 200, 160, 150, 180, 240, 190, 140])
+    
+    # Add some random noise for "Government Reality" look
+    np.random.seed(42) # Deterministic for consistent UI
+    noise = np.random.normal(0, 5, 12)
+    natural_demand = base_demand + noise
+    natural_demand = np.maximum(natural_demand, 50) # Floor at 50
+    
+    # 2. Apply Advertising Impact
+    observed_demand = natural_demand.copy()
+    impact_metrics = {"amplification_factor": 0.0, "overload_risk": 0.0, "insight_type": "Neutral"}
+    
+    if advertising_month_idx is not None:
+        adv_month = advertising_month_idx
+        
+        # Identify nearest future peak from ad month
+        peaks = [4, 9] # May, Oct indices
+        
+        # Simple logic: Find usage relative to specific peaks
+        # We simulate the logic requested:
+        # - 2 months before peak: Smooths demand
+        # - 1 month before/during: Amplifies peak
+        
+        # Let's verify relation to peaks
+        dist_to_peak = min([(p - adv_month) for p in peaks if (p - adv_month) >= 0] or [99])
+        
+        # Case A: 2 Months before a peak (Best Practice)
+        if dist_to_peak == 2:
+            # Shift 20% of peak volume to earlier months (Ad month + next month)
+            peak_idx = adv_month + 2
+            shift_vol = observed_demand[peak_idx] * 0.20
+            
+            observed_demand[peak_idx] -= shift_vol
+            observed_demand[adv_month] += shift_vol * 0.4
+            observed_demand[adv_month+1] += shift_vol * 0.6
+            
+            impact_metrics["amplification_factor"] = -0.15 # Negative = Smoothing
+            impact_metrics["insight_type"] = "Smoothing"
+            
+        # Case B: 1 Month before or During Peak (Bad Timing)
+        elif dist_to_peak <= 1 and dist_to_peak >= 0:
+            target_idx = adv_month + dist_to_peak # The peak itself
+            
+            # Massive spike at the peak
+            spike = observed_demand[target_idx] * 0.35
+            observed_demand[target_idx] += spike
+            
+            # Borrow from future (burnout)
+            if target_idx + 1 < 12:
+                observed_demand[target_idx+1] -= spike * 0.5
+                
+            impact_metrics["amplification_factor"] = 0.35
+            impact_metrics["insight_type"] = "Amplification"
+            
+        else:
+            # General "Base Awareness" bump if not near peak
+            observed_demand[adv_month] += 20
+            observed_demand[(adv_month+1)%12] += 10
+            impact_metrics["insight_type"] = "General Awareness"
+
+    # 3. Calculate Risk Score (Pk / Capacity)
+    # Assume capacity is fixed at 260
+    capacity = 260
+    max_observed = observed_demand.max()
+    impact_metrics["overload_risk"] = max_observed / capacity
+    
+    # Create DF
+    df = pd.DataFrame({
+        "Month": months,
+        "Natural Demand": natural_demand,
+        "Observed Demand": observed_demand
+    })
+    
+    return df, impact_metrics
