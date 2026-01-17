@@ -953,8 +953,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "Demographic Insights", 
     "Geographic Access", 
     "Automated Strategic Insights", 
-    "Recommendations",
-    "Awareness Impact"
+    "Recommendations"
 ])
 
 # --- TAB 1: OVERVIEW ---
@@ -1070,6 +1069,120 @@ with tab1:
     c4.markdown(f'<div class="metric-card"><div class="metric-value">{len(dist_stats_filtered)}</div><div class="metric-label">Districts Active</div></div>', unsafe_allow_html=True)
     
     c5.markdown(f'<div class="metric-card" style="border-left: 4px solid #F59E0B;"><div class="metric-value">{avg_dtpi:.1f}x</div><div class="metric-label">Demographic Transition Pressure (DTPI)<br><span style="font-size: 0.7em; opacity: 0.8; font-weight: 400;">(Youth vs Adult Activity Ratio)</span><br><span style="font-size: 0.6em; opacity: 0.7; font-style: italic;">High values signal impending Mandatory Biometric Update (MBU) workload surges.</span></div></div>', unsafe_allow_html=True)
+
+    # --- STRATEGIC AWARENESS IMPACT ANALYSIS (Moved to Overview) ---
+    st.markdown("---")
+    st.markdown('<div class="section-header">Strategic Awareness Campaign Impact</div>', unsafe_allow_html=True)
+    
+    # --- CONTROLS ---
+    st.markdown("""
+    <div style='background: #F8FAFC; padding: 15px; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 20px;'>
+        <div style='font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 5px;'>SIMULATION PARAMETER</div>
+        Select the proposed launch timing for your major awareness campaign. The system will project the impact on natural seasonal peaks.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col_aw1, col_aw2 = st.columns([1, 2])
+    
+    with col_aw1:
+        month_options = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        selected_ad_month = st.selectbox("Advertising Launch Month", month_options, index=2, key="ov_ad_month") # Default Mar
+        
+        # Convert to index
+        ad_month_idx = month_options.index(selected_ad_month)
+        
+        # Help Box
+        st.info("**What is this?**\nA simulation of how marketing timing interacts with natural demand peaks. Launching too close to a peak increases overload risk.")
+
+    # --- GENERATE DATA ---
+    impact_df, metrics = generate_awareness_impact_data(ad_month_idx)
+    
+    # --- VISUALIZATION (Plotly) ---
+    with col_aw2:
+        fig_impact = go.Figure()
+        
+        # Line 1: Natural Demand
+        fig_impact.add_trace(go.Scatter(
+            x=impact_df['Month'], 
+            y=impact_df['Natural Demand'],
+            mode='lines',
+            name='Natural Demand',
+            line=dict(color='#94A3B8', width=2, dash='dot')
+        ))
+        
+        # Line 2: Observed (Advertised) Demand
+        fig_impact.add_trace(go.Scatter(
+            x=impact_df['Month'], 
+            y=impact_df['Observed Demand'],
+            mode='lines+markers',
+            name='Projected Demand (with Ad)',
+            line=dict(color='#003366', width=4)
+        ))
+        
+        # Highlight the Ad Month
+        fig_impact.add_annotation(
+            x=selected_ad_month,
+            y=impact_df.loc[impact_df['Month'] == selected_ad_month, 'Observed Demand'].values[0],
+            text="📢 Campaign Launch",
+            showarrow=True,
+            arrowhead=1,
+            ax=0,
+            ay=-40
+        )
+        
+        fig_impact.update_layout(
+            title="Projected Demand Comparison",
+            height=350,
+            margin=dict(l=20, r=20, t=40, b=20),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        st.plotly_chart(fig_impact, use_container_width=True, key="ov_impact_chart")
+        
+    # --- INSIGHT PANEL ---
+    st.subheader("Projected Operational Impact")
+    
+    # Determine Status Color
+    risk_score = metrics['overload_risk']
+    amp_factor = metrics['amplification_factor']
+    
+    if metrics['insight_type'] == "Smoothing":
+        status_color = "#16A34A" # Green
+        status_icon = "✅"
+        headline = "OPTIMAL TIMING DETECTED"
+        desc = f"Launching in **{selected_ad_month}** (2 months before peak) successfully **smooths the demand curve**. Peak amplitude reduced by **{abs(amp_factor):.0%}**."
+    elif metrics['insight_type'] == "Amplification":
+        status_color = "#DC2626" # Red
+        status_icon = "⚠️"
+        headline = "HIGH OVERLOAD RISK"
+        desc = f"Launching in **{selected_ad_month}** is too close to a natural peak. This creates a **Super-Peak** with **{amp_factor:.0%} amplification**, potentially crashing center operations."
+    else:
+        status_color = "#2563EB" # Blue
+        status_icon = "ℹ️"
+        headline = "STANDARD AWARENESS LIFT"
+        desc = f"Launching in **{selected_ad_month}** creates a general awareness lift without interacting with major seasonal peaks."
+
+    st.markdown(f"""
+    <div style='background: {status_color}10; border-left: 5px solid {status_color}; padding: 20px; border-radius: 4px;'>
+        <div style='display: flex; align-items: center; gap: 15px;'>
+            <div style='font-size: 2em;'>{status_icon}</div>
+            <div>
+                <div style='font-weight: 800; color: {status_color}; letter-spacing: 0.05em;'>{headline}</div>
+                <div style='font-size: 1.1em; margin-top: 5px;'>{desc}</div>
+            </div>
+        </div>
+        <div style='margin-top: 15px; display: flex; gap: 30px; border-top: 1px solid {status_color}30; padding-top: 15px;'>
+            <div>
+                <div style='font-size: 0.8em; color: #64748B;'>PEAK OVERLOAD RISK</div>
+                <div style='font-size: 1.5em; font-weight: 700; color: #1E293B;'>{risk_score:.2f} <span style='font-size: 0.5em; font-weight: 400;'>(Threshold: 0.85)</span></div>
+            </div>
+             <div>
+                <div style='font-size: 0.8em; color: #64748B;'>PEAK AMPLIFICATION</div>
+                <div style='font-size: 1.5em; font-weight: 700; color: #1E293B;'>{amp_factor:+.0%}</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("---")
 
     # --- SIMULATED SYSTEM BOOT ---
     # --- SYSTEM STATUS INDICATOR ---
@@ -1670,6 +1783,6 @@ with tab6:
         </div>
         """, unsafe_allow_html=True)
         
-# --- TAB 7: SYSTEM ARCHITECTURE ---
+
 
 
