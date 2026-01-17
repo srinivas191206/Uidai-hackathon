@@ -1189,6 +1189,90 @@ with tab1:
         </div>
     </div>
     """, unsafe_allow_html=True)
+    
+    # --- MONTH-SPECIFIC INSIGHTS ---
+    st.markdown("---")
+    st.subheader(f"Actual Data Insights for {selected_ad_month}")
+    
+    # Extract actual data for the selected month
+    month_num = ad_month_idx + 1  # Convert 0-indexed to 1-indexed month
+    
+    if 'date' in filtered_df.columns and len(filtered_df) > 0:
+        # Create a copy and extract month
+        df_month = filtered_df.copy()
+        df_month['month'] = pd.to_datetime(df_month['date']).dt.month
+        df_month['year'] = pd.to_datetime(df_month['date']).dt.year
+        
+        # Filter for selected month across all years
+        month_data = df_month[df_month['month'] == month_num]
+        
+        if len(month_data) > 0:
+            # Calculate metrics
+            total_activity_month = month_data['total_activity'].sum()
+            avg_daily_month = month_data.groupby('date')['total_activity'].sum().mean()
+            unique_dates = month_data['date'].nunique()
+            
+            # Date range
+            min_date = month_data['date'].min()
+            max_date = month_data['date'].max()
+            
+            # Age breakdown
+            child_activity = month_data['age_0_4'].sum() + month_data['age_5_17'].sum()
+            adult_activity = month_data['age_18_greater'].sum()
+            
+            # Display insights
+            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+            
+            with col_m1:
+                st.markdown(f"""
+                <div style='background: #F0F9FF; padding: 16px; border-radius: 8px; border-left: 3px solid #0284C7;'>
+                    <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; margin-bottom: 4px;'>Total Activity</div>
+                    <div style='font-size: 1.8em; font-weight: 700; color: #0F172A;'>{format_indian(total_activity_month)}</div>
+                    <div style='font-size: 0.7em; color: #94A3B8; margin-top: 4px;'>in {selected_ad_month}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_m2:
+                st.markdown(f"""
+                <div style='background: #F0FDF4; padding: 16px; border-radius: 8px; border-left: 3px solid #16A34A;'>
+                    <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; margin-bottom: 4px;'>Daily Average</div>
+                    <div style='font-size: 1.8em; font-weight: 700; color: #0F172A;'>{format_indian(avg_daily_month)}</div>
+                    <div style='font-size: 0.7em; color: #94A3B8; margin-top: 4px;'>per day</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_m3:
+                child_pct = (child_activity / total_activity_month * 100) if total_activity_month > 0 else 0
+                st.markdown(f"""
+                <div style='background: #FEF3C7; padding: 16px; border-radius: 8px; border-left: 3px solid #F59E0B;'>
+                    <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; margin-bottom: 4px;'>Youth Share</div>
+                    <div style='font-size: 1.8em; font-weight: 700; color: #0F172A;'>{child_pct:.1f}%</div>
+                    <div style='font-size: 0.7em; color: #94A3B8; margin-top: 4px;'>Age 0-17</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_m4:
+                st.markdown(f"""
+                <div style='background: #F5F3FF; padding: 16px; border-radius: 8px; border-left: 3px solid #7C3AED;'>
+                    <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; margin-bottom: 4px;'>Data Coverage</div>
+                    <div style='font-size: 1.8em; font-weight: 700; color: #0F172A;'>{unique_dates}</div>
+                    <div style='font-size: 0.7em; color: #94A3B8; margin-top: 4px;'>days recorded</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Date range info
+            st.markdown(f"""
+            <div style='background: #FAFAFA; padding: 14px; border-radius: 6px; margin-top: 15px; border: 1px solid #E2E8F0;'>
+                <div style='font-size: 0.85em; color: #64748B;'>
+                    <strong>Date Range:</strong> {min_date.strftime('%B %d, %Y')} to {max_date.strftime('%B %d, %Y')}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.info(f"No data available for {selected_ad_month} in the current selection.")
+    else:
+        st.warning("Insufficient data to display month-specific insights.")
+    
     st.markdown("---")
 
     # --- SIMULATED SYSTEM BOOT ---
