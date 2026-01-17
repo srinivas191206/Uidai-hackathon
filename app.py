@@ -1067,7 +1067,7 @@ with tab1:
         
     c4.markdown(f'<div class="metric-card"><div class="metric-value">{len(dist_stats_filtered)}</div><div class="metric-label">Districts Active</div></div>', unsafe_allow_html=True)
     
-    c5.markdown(f'<div class="metric-card" style="border-left: 4px solid #F59E0B;"><div class="metric-value">{avg_dtpi:.1%}</div><div class="metric-label">Demographic Transition Pressure (DTPI)</div></div>', unsafe_allow_html=True)
+    c5.markdown(f'<div class="metric-card" style="border-left: 4px solid #F59E0B;"><div class="metric-value">{avg_dtpi:.1f}x</div><div class="metric-label">Demographic Transition Pressure (DTPI)<br><span style="font-size: 0.7em; opacity: 0.8; font-weight: 400;">(Youth vs Adult Activity Ratio)</span></div></div>', unsafe_allow_html=True)
 
     # --- SIMULATED SYSTEM BOOT ---
     # --- SYSTEM STATUS INDICATOR ---
