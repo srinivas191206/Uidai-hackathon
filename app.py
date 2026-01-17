@@ -1087,26 +1087,33 @@ with tab1:
     with col_aw1:
         month_options = ["January", "February", "March", "April", "May", "June", 
                         "July", "August", "September", "October", "November", "December"]
-        selected_ad_month = st.selectbox("Campaign Launch Month", month_options, index=2, key="ov_ad_month")
+        month_options_with_all = ["All"] + month_options
         
-        # Convert to index
-        ad_month_idx = month_options.index(selected_ad_month)
+        # Select box now includes "All"
+        selected_ad_month_val = st.selectbox("Campaign Launch Month", month_options_with_all, index=3, key="ov_ad_month") # Index 3 is March if "All" is at 0? No idx 3 is All, Jan, Feb, March.
         
-        # Add date range filter for campaign analysis
-        st.markdown("---")
-        st.markdown("**Analysis Period**")
-        
-        # Get min and max dates from filtered_df
-        if 'date' in filtered_df.columns and len(filtered_df) > 0:
-            min_date_available = filtered_df['date'].min()
-            max_date_available = filtered_df['date'].max()
+        if selected_ad_month_val == "All":
+            selected_ad_month = "All"
+            ad_month_idx = None 
+            df_for_month_selection = filtered_df.copy()
+        else:
+            selected_ad_month = selected_ad_month_val
+            ad_month_idx = month_options.index(selected_ad_month)
+            # Filter the original dataframe for the selected month
+            selected_month_num = ad_month_idx + 1
+            df_for_month_selection = filtered_df[pd.to_datetime(filtered_df['date']).dt.month == selected_month_num].copy()
+
+
+        if 'date' in df_for_month_selection.columns and len(df_for_month_selection) > 0:
+            min_date_available = df_for_month_selection['date'].min()
+            max_date_available = df_for_month_selection['date'].max()
             
             campaign_date_range = st.date_input(
-                "Select Date Range",
+                "Select Date Range within Month",
                 value=(min_date_available, max_date_available),
                 min_value=min_date_available,
                 max_value=max_date_available,
-                key="campaign_date_range"
+                key=f"campaign_date_range_{selected_ad_month}"
             )
             
             # Filter data based on selected date range
@@ -1157,21 +1164,31 @@ with tab1:
             line=dict(color='#003366', width=4)
         ))
         
-        # Highlight the Campaign Launch Month
-        fig_impact.add_annotation(
-            x=selected_ad_month,
-            y=impact_df.loc[impact_df['Month'] == selected_ad_month, 'Observed Demand'].values[0],
-            text="Campaign Launch",
-            showarrow=True,
-            arrowhead=2,
-            arrowcolor="#003366",
-            ax=0,
-            ay=-50,
-            font=dict(size=11, color="#003366", family="Arial")
-        )
+        # Highlight the Campaign Launch Month (Only if present in view)
+        # Highlight the Campaign Launch Month (Only if present in view)
+        if selected_ad_month in impact_df['Month'].values:
+            fig_impact.add_annotation(
+                x=selected_ad_month,
+                y=impact_df.loc[impact_df['Month'] == selected_ad_month, 'Observed Demand'].values[0],
+                text="Campaign Launch",
+                showarrow=True,
+                arrowhead=2,
+                arrowcolor="#003366",
+                ax=0,
+                ay=-50,
+                font=dict(size=11, color="#003366", family="Arial")
+            )
         
+        # Robust Title Logic
+        # Check if first element starts with a digit (Daily: "01 Jan") vs Letter (Monthly: "January")
+        first_label = str(impact_df['Month'].iloc[0])
+        if first_label[0].isdigit():
+            chart_title = "Demand Projection (Daily Zoom)"
+        else:
+            chart_title = "Annual Demand Projection"
+
         fig_impact.update_layout(
-            title="Monthly Demand Projection",
+            title=chart_title,
             height=380,
             margin=dict(l=20, r=20, t=50, b=30),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),

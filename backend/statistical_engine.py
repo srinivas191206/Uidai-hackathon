@@ -379,6 +379,51 @@ def generate_awareness_impact_data(filtered_df, advertising_month_idx=None):
         pd.DataFrame: Monthly data with columns [Month, Natural Demand, Observed Demand]
         dict: Impact metrics {amplification_factor, overload_risk, insight_type}
     """
+    # 1. Determine Scope (Daily vs Monthly)
+    is_daily = False
+    if 'date' in filtered_df.columns and len(filtered_df) > 0:
+        date_range_days = (filtered_df['date'].max() - filtered_df['date'].min()).days
+        if date_range_days <= 60: # Threshold for "Zoom" mode
+            is_daily = True
+            
+    if is_daily:
+        # --- DAILY GRANULARITY ---
+        daily_df = filtered_df.groupby('date')['total_activity'].sum().reset_index()
+        daily_df = daily_df.sort_values('date')
+        
+        natural_demand = daily_df['total_activity'].values
+        dates = daily_df['date'].dt.strftime('%d %b').values # Format: 01 Jan
+        
+        # Simple Daily Simulation logic
+        observed_demand = natural_demand.astype(float).copy()
+        
+        # Apply ad impact if dates fall within selected ad month AND campaign is active
+        if advertising_month_idx is not None:
+            adv_month_num = advertising_month_idx + 1 # 1-12
+            
+            # Vectorized impact application
+            date_months = daily_df['date'].dt.month
+            
+            # Primary Month Impact (+20%)
+            mask_primary = date_months == adv_month_num
+            observed_demand[mask_primary] *= 1.25
+            
+            # Secondary Month Impact (+10% - Spillover)
+            mask_secondary = date_months == (adv_month_num % 12 + 1)
+            observed_demand[mask_secondary] *= 1.10
+            
+            impact_metrics = {"amplification_factor": 0.25, "overload_risk": observed_demand.max() / (natural_demand.max() * 1.5 + 1), "insight_type": "Micro-Targeting"}
+        else:
+             impact_metrics = {"amplification_factor": 0.0, "overload_risk": observed_demand.max() / (natural_demand.max() * 1.5 + 1), "insight_type": "Neutral (No Campaign)"}
+        
+        df = pd.DataFrame({
+            "Month": dates, # Reuse 'Month' column name for X-axis compatibility in app.py
+            "Natural Demand": natural_demand,
+            "Observed Demand": observed_demand
+        })
+        return df, impact_metrics
+
+    # --- MONTHLY AGGREGATION (Existing Logic) ---
     month_names = ["January", "February", "March", "April", "May", "June", 
                    "July", "August", "September", "October", "November", "December"]
     
