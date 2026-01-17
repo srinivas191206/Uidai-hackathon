@@ -1013,7 +1013,7 @@ with tab1:
     avg_dtpi = dist_stats_filtered['dtpi'].mean()
     avg_bubr = dist_stats_filtered['bubr'].mean()
     
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4 = st.columns(4)
 
     # Velocity indicators
     v_arrow = "" # Removed emoji
@@ -1067,8 +1067,6 @@ with tab1:
         c3.markdown(f'<div class="metric-card"><div class="metric-value">{youth_share:.1f}%</div><div class="metric-label">Youth Activity Ratio</div></div>', unsafe_allow_html=True)
         
     c4.markdown(f'<div class="metric-card"><div class="metric-value">{len(dist_stats_filtered)}</div><div class="metric-label">Districts Active</div></div>', unsafe_allow_html=True)
-    
-    c5.markdown(f'<div class="metric-card" style="border-left: 4px solid #F59E0B;"><div class="metric-value">{avg_dtpi:.1f}x</div><div class="metric-label">Demographic Transition Pressure (DTPI)<br><span style="font-size: 0.7em; opacity: 0.8; font-weight: 400;">(Youth vs Adult Activity Ratio)</span><br><span style="font-size: 0.6em; opacity: 0.7; font-style: italic;">High values signal impending Mandatory Biometric Update (MBU) workload surges.</span></div></div>', unsafe_allow_html=True)
 
     # --- STRATEGIC AWARENESS IMPACT ANALYSIS (Moved to Overview) ---
     st.markdown("---")
@@ -1107,24 +1105,38 @@ with tab1:
         if 'date' in df_for_month_selection.columns and len(df_for_month_selection) > 0:
             min_date_available = df_for_month_selection['date'].min()
             max_date_available = df_for_month_selection['date'].max()
-            
-            campaign_date_range = st.date_input(
-                "Select Date Range within Month",
-                value=(min_date_available, max_date_available),
-                min_value=min_date_available,
-                max_value=max_date_available,
-                key=f"campaign_date_range_{selected_ad_month}"
-            )
-            
-            # Filter data based on selected date range
-            if len(campaign_date_range) == 2:
-                campaign_start, campaign_end = campaign_date_range
-                filtered_df_campaign = filtered_df[
-                    (filtered_df['date'] >= pd.Timestamp(campaign_start)) & 
-                    (filtered_df['date'] <= pd.Timestamp(campaign_end))
-                ].copy()
+        else:
+            # Fallback: Create range for the selected month in the primary year of the dataset
+            if len(filtered_df) > 0:
+                primary_year = filtered_df['date'].dt.year.mode()[0]
             else:
-                filtered_df_campaign = filtered_df.copy()
+                primary_year = datetime.now().year
+                
+            if selected_ad_month != "All":
+                 # Use known month num
+                 import calendar
+                 last_day = calendar.monthrange(int(primary_year), selected_month_num)[1]
+                 min_date_available = pd.Timestamp(year=primary_year, month=selected_month_num, day=1)
+                 max_date_available = pd.Timestamp(year=primary_year, month=selected_month_num, day=last_day)
+            else:
+                 min_date_available = filtered_df['date'].min() if len(filtered_df) > 0 else datetime(primary_year, 1, 1)
+                 max_date_available = filtered_df['date'].max() if len(filtered_df) > 0 else datetime(primary_year, 12, 31)
+
+        campaign_date_range = st.date_input(
+            "Select Date Range within Month",
+            value=(min_date_available, max_date_available),
+            min_value=min_date_available,
+            max_value=max_date_available,
+            key=f"campaign_date_range_{selected_ad_month}"
+        )
+            
+        # Filter data based on selected date range
+        if len(campaign_date_range) == 2:
+            campaign_start, campaign_end = campaign_date_range
+            filtered_df_campaign = filtered_df[
+                (filtered_df['date'] >= pd.Timestamp(campaign_start)) & 
+                (filtered_df['date'] <= pd.Timestamp(campaign_end))
+            ].copy()
         else:
             filtered_df_campaign = filtered_df.copy()
         
