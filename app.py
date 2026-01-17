@@ -925,11 +925,8 @@ with tab1:
     # Closed-Loop Statistical Anomaly & Action Panel
     anomalies = detect_statistical_anomalies(filtered_df)
     
-    # Equity Risk Filter
-    equity_risk_dists = dist_stats_filtered[dist_stats_filtered['equity_risk_flag']]
-    
-    if anomalies or not equity_risk_dists.empty:
-        with st.expander(f"Active Incident Monitoring: {scope_name} ({len(anomalies) + len(equity_risk_dists)})", expanded=True):
+    if anomalies:
+        with st.expander(f"Active Incident Monitoring: {scope_name} ({len(anomalies)})", expanded=True):
             st.markdown("<div style='font-size: 0.85rem; color: #64748B; margin-bottom: 10px;'>High-confidence deviations identified via <b>Rolling Z-Scores</b>. All anomalies automatically trigger a closed-loop operational workflow.</div>", unsafe_allow_html=True)
             
             # Action Flow Header
@@ -962,18 +959,6 @@ with tab1:
             if len(anomalies) > 5:
                 st.info(f"Operational Brief: {len(anomalies) - 5} additional minor anomalies detected and logged for internal review.")
 
-            # Limit to top 5 Equity Risk districts
-            top_equity_risk = equity_risk_dists.head(5)
-            for _, row in top_equity_risk.iterrows():
-                st.markdown(f"""
-                <div style='display: grid; grid-template-columns: 1fr 1fr 2fr 1.5fr 1fr; background: #FFF1F2; padding: 10px; border-bottom: 1px solid #FECDD3; font-size: 0.85rem; align-items: center;'>
-                    <div style='font-weight: 500;'>CRITICAL</div>
-                    <div style='color: #E11D48; font-weight: 700;'>EQUITY RISK</div>
-                    <div style='color: #9F1239;'><b>{row['postal_district']}</b>: High {dataset_type} Saturation Pressure + Access Inequality</div>
-                    <div style='font-style: italic; color: #881337;'>Resource Audit Recommended</div>
-                    <div style='background: #E11D4820; color: #E11D48; padding: 2px 6px; border-radius: 4px; font-weight: 800; text-align: center; border: 1px solid #E11D4840;'>HIGH RISK</div>
-                </div>
-                """, unsafe_allow_html=True)
             
 
     else:
