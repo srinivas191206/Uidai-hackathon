@@ -1207,7 +1207,7 @@ with tab1:
         month_data = df_month[df_month['month'] == month_num]
         
         if len(month_data) > 0:
-            # Calculate metrics
+            # Calculate metrics from actual data
             total_activity_month = month_data['total_activity'].sum()
             avg_daily_month = month_data.groupby('date')['total_activity'].sum().mean()
             unique_dates = month_data['date'].nunique()
@@ -1219,6 +1219,39 @@ with tab1:
             # Age breakdown
             child_activity = month_data['age_0_4'].sum() + month_data['age_5_17'].sum()
             adult_activity = month_data['age_18_greater'].sum()
+            
+            data_note = ""
+        else:
+            # No data for this specific month - use estimated values based on overall average
+            total_activity_overall = filtered_df['total_activity'].sum()
+            avg_monthly = total_activity_overall / 12  # Rough estimate
+            avg_daily_overall = filtered_df.groupby('date')['total_activity'].sum().mean()
+            
+            total_activity_month = avg_monthly
+            avg_daily_month = avg_daily_overall
+            unique_dates = 30  # Approximate
+            
+            # Estimate date range for current year
+            import datetime
+            current_year = datetime.datetime.now().year
+            min_date = pd.Timestamp(f"{current_year}-{month_num:02d}-01")
+            max_date = pd.Timestamp(f"{current_year}-{month_num:02d}-{unique_dates}")
+            
+            # Age breakdown estimate
+            child_activity = total_activity_month * 0.3  # Assume 30% youth
+            adult_activity = total_activity_month * 0.7
+            
+            data_note = f"""
+            <div style='background: #FEF3C7; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid #F59E0B;'>
+                <div style='font-size: 0.8em; color: #92400E;'>
+                    <strong>Note:</strong> No historical data available for {selected_ad_month}. Showing estimated metrics based on overall average patterns.
+                </div>
+            </div>
+            """
+        
+        # Display note if using estimates
+        if data_note:
+            st.markdown(data_note, unsafe_allow_html=True)
             
             # Display insights
             col_m1, col_m2, col_m3, col_m4 = st.columns(4)
@@ -1268,8 +1301,6 @@ with tab1:
                 </div>
             </div>
             """, unsafe_allow_html=True)
-        else:
-            st.info(f"No data available for {selected_ad_month} in the current selection.")
     else:
         st.warning("Insufficient data to display month-specific insights.")
     
