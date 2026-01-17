@@ -1072,30 +1072,37 @@ with tab1:
 
     # --- STRATEGIC AWARENESS IMPACT ANALYSIS (Moved to Overview) ---
     st.markdown("---")
-    st.markdown('<div class="section-header">Strategic Awareness Campaign Impact</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">Strategic Awareness Campaign Impact Analysis</div>', unsafe_allow_html=True)
     
     # --- CONTROLS ---
     st.markdown("""
-    <div style='background: #F8FAFC; padding: 15px; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 20px;'>
-        <div style='font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 5px;'>SIMULATION PARAMETER</div>
-        Select the proposed launch timing for your major awareness campaign. The system will project the impact on natural seasonal peaks.
+    <div style='background: #F8FAFC; padding: 18px; border-radius: 8px; border: 1px solid #CBD5E1; margin-bottom: 20px;'>
+        <div style='font-size: 0.95em; font-weight: 600; color: #334155; margin-bottom: 8px;'>Campaign Timing Simulator</div>
+        <div style='font-size: 0.85em; color: #64748B; line-height: 1.5;'>This tool analyzes how the timing of public awareness campaigns affects service demand patterns. Select a launch month to see projected impact on operational load.</div>
     </div>
     """, unsafe_allow_html=True)
     
     col_aw1, col_aw2 = st.columns([1, 2])
     
     with col_aw1:
-        month_options = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        selected_ad_month = st.selectbox("Advertising Launch Month", month_options, index=2, key="ov_ad_month") # Default Mar
+        month_options = ["January", "February", "March", "April", "May", "June", 
+                        "July", "August", "September", "October", "November", "December"]
+        selected_ad_month = st.selectbox("Campaign Launch Month", month_options, index=2, key="ov_ad_month")
         
         # Convert to index
         ad_month_idx = month_options.index(selected_ad_month)
         
         # Help Box
-        st.info("**What is this?**\nA simulation of how marketing timing interacts with natural demand peaks. Launching too close to a peak increases overload risk.")
+        st.markdown("""
+        <div style='background: #EFF6FF; padding: 12px; border-radius: 6px; border-left: 3px solid #3B82F6; margin-top: 15px;'>
+            <div style='font-size: 0.85em; color: #1E40AF; line-height: 1.5;'>
+                <strong>How it works:</strong> The system compares natural demand patterns (based on current data) with projected demand after a campaign launch. This helps identify optimal timing to avoid service overload.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # --- GENERATE DATA ---
-    impact_df, metrics = generate_awareness_impact_data(ad_month_idx)
+    impact_df, metrics = generate_awareness_impact_data(filtered_df, ad_month_idx)
     
     # --- VISUALIZATION (Plotly) ---
     with col_aw2:
@@ -1119,22 +1126,26 @@ with tab1:
             line=dict(color='#003366', width=4)
         ))
         
-        # Highlight the Ad Month
+        # Highlight the Campaign Launch Month
         fig_impact.add_annotation(
             x=selected_ad_month,
             y=impact_df.loc[impact_df['Month'] == selected_ad_month, 'Observed Demand'].values[0],
-            text="📢 Campaign Launch",
+            text="Campaign Launch",
             showarrow=True,
-            arrowhead=1,
+            arrowhead=2,
+            arrowcolor="#003366",
             ax=0,
-            ay=-40
+            ay=-50,
+            font=dict(size=11, color="#003366", family="Arial")
         )
         
         fig_impact.update_layout(
-            title="Projected Demand Comparison",
-            height=350,
-            margin=dict(l=20, r=20, t=40, b=20),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            title="Monthly Demand Projection",
+            height=380,
+            margin=dict(l=20, r=20, t=50, b=30),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            plot_bgcolor="#FAFAFA",
+            paper_bgcolor="white"
         )
         st.plotly_chart(fig_impact, use_container_width=True, key="ov_impact_chart")
         
@@ -1146,38 +1157,34 @@ with tab1:
     amp_factor = metrics['amplification_factor']
     
     if metrics['insight_type'] == "Smoothing":
-        status_color = "#16A34A" # Green
-        status_icon = "✅"
-        headline = "OPTIMAL TIMING DETECTED"
-        desc = f"Launching in **{selected_ad_month}** (2 months before peak) successfully **smooths the demand curve**. Peak amplitude reduced by **{abs(amp_factor):.0%}**."
+        status_color = "#16A34A"
+        headline = "Optimal Campaign Timing"
+        desc = f"Launching the campaign in {selected_ad_month} occurs two months before a natural demand peak. This timing allows the system to distribute increased demand more evenly, reducing peak load by approximately {abs(amp_factor):.0%}. This approach helps prevent service center overload."
     elif metrics['insight_type'] == "Amplification":
-        status_color = "#DC2626" # Red
-        status_icon = "⚠️"
-        headline = "HIGH OVERLOAD RISK"
-        desc = f"Launching in **{selected_ad_month}** is too close to a natural peak. This creates a **Super-Peak** with **{amp_factor:.0%} amplification**, potentially crashing center operations."
+        status_color = "#DC2626"
+        headline = "High Risk: Peak Amplification Detected"
+        desc = f"Launching the campaign in {selected_ad_month} coincides with or immediately precedes a natural demand peak. This timing is projected to increase the peak by {amp_factor:.0%}, which may exceed operational capacity and cause service delays."
     else:
-        status_color = "#2563EB" # Blue
-        status_icon = "ℹ️"
-        headline = "STANDARD AWARENESS LIFT"
-        desc = f"Launching in **{selected_ad_month}** creates a general awareness lift without interacting with major seasonal peaks."
+        status_color = "#2563EB"
+        headline = "Standard Campaign Impact"
+        desc = f"Launching the campaign in {selected_ad_month} is expected to generate moderate awareness without significantly affecting existing demand patterns. The timing does not align closely with major seasonal peaks."
 
     st.markdown(f"""
-    <div style='background: {status_color}10; border-left: 5px solid {status_color}; padding: 20px; border-radius: 4px;'>
-        <div style='display: flex; align-items: center; gap: 15px;'>
-            <div style='font-size: 2em;'>{status_icon}</div>
-            <div>
-                <div style='font-weight: 800; color: {status_color}; letter-spacing: 0.05em;'>{headline}</div>
-                <div style='font-size: 1.1em; margin-top: 5px;'>{desc}</div>
-            </div>
+    <div style='background: {status_color}08; border-left: 4px solid {status_color}; padding: 22px; border-radius: 6px; margin-top: 20px;'>
+        <div style='margin-bottom: 12px;'>
+            <div style='font-weight: 700; color: {status_color}; font-size: 1.1em; margin-bottom: 8px;'>{headline}</div>
+            <div style='font-size: 0.95em; color: #334155; line-height: 1.6;'>{desc}</div>
         </div>
-        <div style='margin-top: 15px; display: flex; gap: 30px; border-top: 1px solid {status_color}30; padding-top: 15px;'>
+        <div style='margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border-top: 1px solid {status_color}20; padding-top: 18px;'>
             <div>
-                <div style='font-size: 0.8em; color: #64748B;'>PEAK OVERLOAD RISK</div>
-                <div style='font-size: 1.5em; font-weight: 700; color: #1E293B;'>{risk_score:.2f} <span style='font-size: 0.5em; font-weight: 400;'>(Threshold: 0.85)</span></div>
+                <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Peak Overload Risk</div>
+                <div style='font-size: 1.6em; font-weight: 700; color: #1E293B;'>{risk_score:.2f}</div>
+                <div style='font-size: 0.7em; color: #94A3B8; margin-top: 2px;'>Threshold: 0.85</div>
             </div>
-             <div>
-                <div style='font-size: 0.8em; color: #64748B;'>PEAK AMPLIFICATION</div>
-                <div style='font-size: 1.5em; font-weight: 700; color: #1E293B;'>{amp_factor:+.0%}</div>
+            <div>
+                <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Peak Change</div>
+                <div style='font-size: 1.6em; font-weight: 700; color: #1E293B;'>{amp_factor:+.0%}</div>
+                <div style='font-size: 0.7em; color: #94A3B8; margin-top: 2px;'>vs Natural Pattern</div>
             </div>
         </div>
     </div>
