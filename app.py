@@ -24,8 +24,7 @@ header_html = """
     <div class="fixed-header">
         <div class="header-content">
             <div class="header-left">
-                <span class="header-brand">UIDAI</span>
-                <span class="header-title">Analytics</span>
+                <span class="header-brand">UIDAI Analytics</span>
             </div>
             <div class="header-right">
                 <a href="#government-grade-data-architecture" class="how-it-works">How it works</a>
@@ -68,10 +67,10 @@ st.markdown(f"""
         gap: 15px;
     }}
     .header-brand {{
-        color: #FF9933;
-        font-weight: 800;
-        font-size: 1.4rem;
-        letter-spacing: 1px;
+        color: white;
+        font-weight: 700;
+        font-size: 1.25rem;
+        letter-spacing: 0.5px;
     }}
     .header-title {{
         color: white;
@@ -84,16 +83,17 @@ st.markdown(f"""
     .how-it-works {{
         color: white;
         text-decoration: none;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         font-weight: 500;
-        padding: 8px 16px;
-        border: 1px solid rgba(255,255,255,0.4);
-        border-radius: 4px;
+        padding: 6px 14px;
+        background-color: #3B82F6;
+        border-radius: 6px;
         transition: all 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }}
     .how-it-works:hover {{
-        background-color: rgba(255,255,255,0.1);
-        border-color: white;
+        background-color: #2563EB;
+        transform: translateY(-1px);
     }}
     
     /* Hide all Streamlit-specific elements for a custom portal look */
@@ -480,6 +480,10 @@ def load_and_process_data(dataset_type="Enrolment"):
             if col not in df.columns:
                 df[col] = 0
                 
+        # --- EXCLUDE LADAKH (User Selection) ---
+        if 'postal_state' in df.columns:
+            df = df[df['postal_state'].str.upper() != 'LADAKH']
+                
         # 1. Total Enrolment per record
         df['total_activity'] = df['age_0_5'] + df['age_5_17'] + df['age_18_greater']
         
@@ -551,7 +555,8 @@ def generate_insights(df, dist_stats, selected_scope, scope_name, dataset_type="
         insights.append({
             "title": "Demographic Pulse (Infants)",
             "text": f"Across {scope_name}, child enrolment constitutes **{child_pct:.1f}%** of all activity. "
-                    + ("This is below the recommended 15% threshold, indicating a need for targeted Anganwadi drives." if child_pct < 15 else "This indicates healthy saturation in early age groups."),
+                    + ("This is below the recommended 15% threshold, indicating a need for targeted Anganwadi drives." if child_pct < 15 else "This indicates healthy saturation in early age groups.")
+                    + "\n\n**What this means:** This metric monitors the intake of the youngest citizens (0-5 years) into the Aadhaar ecosystem. A low percentage suggests we are missing new births in this region.",
             "data": {
                 "0-5 Years": f"{child_count:,.0f}",
                 "5-17 Years": f"{youth_count:,.0f}",
@@ -570,7 +575,8 @@ def generate_insights(df, dist_stats, selected_scope, scope_name, dataset_type="
             "title": f"Service Distribution Profile ({dataset_type})",
             "text": f"Analysis of {dataset_type} activity across {scope_name} shows that **{primary_group}** is the primary driver of volume. "
                     f"The split is **{youth_pct:.1f}%** for Children/Youth (5-17) and **{adult_pct:.1f}%** for Adults (18+). "
-                    "This identify whether center capacity is being consumed by mandatory updates or new demographic captures.",
+                    "This identify whether center capacity is being consumed by mandatory updates or new demographic captures."
+                    "\n\n**What this means:** This profile helps administrators understand if centers are busy with 'new customers' (youth) or 'servicing existing ones' (adult updates).",
             "data": {
                 "5-17 Years": f"{youth_count:,.0f}",
                 "18+ Years": f"{adult_count:,.0f}",
@@ -594,7 +600,8 @@ def generate_insights(df, dist_stats, selected_scope, scope_name, dataset_type="
         insights.append({
             "title": "Resource Allocation Alert",
             "text": f"**{len(high_stress_dists)} districts** are operating in the 'High Demand' zone (>1.3x National Avg). "
-                    f"Traffic intensity suggests standard centers are overwhelmed. {rec_text} Priority Districts: **{', '.join(top_stressed_names)}**.",
+                    f"Traffic intensity suggests standard centers are overwhelmed. {rec_text} Priority Districts: **{', '.join(top_stressed_names)}**."
+                    "\n\n**What this means:** 'High Demand' identifies districts where the number of daily visitors is significantly higher than the average, likely causing long wait times and center crowding.",
             "data": {
                 "High Demand Districts": f"{len(high_stress_dists)}",
                 "Avg Demand Score": f"{avg_demand_score:.2f}x",
@@ -613,7 +620,8 @@ def generate_insights(df, dist_stats, selected_scope, scope_name, dataset_type="
         insights.append({
             "title": "Silent Under-Enrolment Detected",
             "text": f"Statistical algorithms have identified **{len(silent_dists)} regions** with consistently low activity and low variance. "
-                    f"Unlike volatile drops, these areas effectively 'flatlined'. Prioritize audit for: **{', '.join(silent_dists['postal_district'].head(3).tolist())}**.",
+                    f"Unlike volatile drops, these areas effectively 'flatlined'. Prioritize audit for: **{', '.join(silent_dists['postal_district'].head(3).tolist())}**."
+                    "\n\n**What this means:** 'Silent Under-Enrolment' detects areas where activity has mysteriously stopped or stayed very low, which might indicate broken machines or inactive centers that haven't been reported.",
             "data": {
                 "Affected Districts": f"{len(silent_dists)}",
                 "Avg Demand Score": f"{avg_silent_demand:.2f}x",
@@ -629,7 +637,8 @@ def generate_insights(df, dist_stats, selected_scope, scope_name, dataset_type="
         insights.append({
             "title": "Adolescent-to-Adult Transition Surge",
             "text": f"**{len(high_dtpi)} districts** are showing critical transition pressure. High volumes of 5-17s are aging into the mandatory 18+ biometric update cycle. "
-                    "Recommend proactive appointment scheduling for these age brackets.",
+                    "Recommend proactive appointment scheduling for these age brackets."
+                    "\n\n**What this means:** DTPI (Demographic Transition Pressure) predicts future crowds. It counts children who will soon turn 18 and need mandatory finger-print updates, allowing us to plan capacity ahead of time.",
             "data": {
                 "High DTPI Districts": f"{len(high_dtpi)}",
                 "Avg DTPI Ratio": f"{avg_dtpi:.2f}",
@@ -643,7 +652,8 @@ def generate_insights(df, dist_stats, selected_scope, scope_name, dataset_type="
         insights.append({
             "title": "Biometric Update Concentration",
             "text": f"In **{len(heavy_bubr)} districts**, adult biometric updates/corrections exceed 75% of total center activity. "
-                    "This indicates a 'Maintenance over Growth' phase. Optimize counters for update-specific flows.",
+                    "This indicates a 'Maintenance over Growth' phase. Optimize counters for update-specific flows."
+                    "\n\n**What this means:** BUBR identifies if centers are spending all their time 'fixing old Aadhaar cards' instead of 'making new ones'. High values suggest we should set up dedicated fast-track lanes for simple updates.",
             "data": {
                 "Affected Districts": f"{len(heavy_bubr)}",
                 "Avg BUBR": f"{heavy_bubr['bubr'].mean():.1%}",
@@ -661,7 +671,8 @@ def generate_insights(df, dist_stats, selected_scope, scope_name, dataset_type="
         insights.append({
             "title": "Hyper-Local Concentration",
             "text": f"In **{len(high_conc)} districts**, over 60% of enrolment happens in just the top 10% of pincodes. "
-                    "This suggests 'Centre Deserts' in the remaining 90%. Recommendation: Dynamic resource deployment to peripheral pincodes.",
+                    "This suggests 'Centre Deserts' in the remaining 90%. Recommendation: Dynamic resource deployment to peripheral pincodes."
+                    "\n\n**What this means:** Concentration Risk flags areas where all Aadhaar services are clumped in one spot, forcing people from far-away villages to travel long distances. We need more mobile vans here.",
             "data": {
                 "Affected Districts": f"{len(high_conc)}",
                 "Avg Concentration": f"{avg_conc:.1%}",
@@ -971,8 +982,7 @@ with tab1:
     avg_dtpi = dist_stats_filtered['dtpi'].mean()
     avg_bubr = dist_stats_filtered['bubr'].mean()
     
-    c1, c2, c3, c4 = st.columns(4)
-    c5, c6 = st.columns(2)
+    c1, c2, c3, c4, c5 = st.columns(5)
 
     # Velocity indicators
     v_arrow = "" # Removed emoji
@@ -1021,14 +1031,13 @@ with tab1:
     if dataset_type == "Enrolment":
         c3.markdown(f'<div class="metric-card"><div class="metric-value">{child_share:.1f}%</div><div class="metric-label">Child Enrolment Ratio</div></div>', unsafe_allow_html=True)
     else:
-        # Show Youth Ratio for Biometric/Demographic
+        # Change to Youth Activity Ratio as requested
         youth_share = (filtered_df['age_5_17'].sum() / total_enrolment * 100) if total_enrolment > 0 else 0
-        c3.markdown(f'<div class="metric-card"><div class="metric-value">{youth_share:.1f}%</div><div class="metric-label">Youth (5-17) Ratio</div></div>', unsafe_allow_html=True)
+        c3.markdown(f'<div class="metric-card"><div class="metric-value">{youth_share:.1f}%</div><div class="metric-label">Youth Activity Ratio</div></div>', unsafe_allow_html=True)
         
     c4.markdown(f'<div class="metric-card"><div class="metric-value">{len(dist_stats_filtered)}</div><div class="metric-label">Districts Active</div></div>', unsafe_allow_html=True)
     
-    c5.markdown(f'<div class="metric-card" style="border-left: 4px solid #F59E0B;"><div class="metric-value">{avg_dtpi:.2f}</div><div class="metric-label">Demographic Transition Pressure (DTPI)</div></div>', unsafe_allow_html=True)
-    c6.markdown(f'<div class="metric-card" style="border-left: 4px solid #10B981;"><div class="metric-value">{avg_bubr:.1%}</div><div class="metric-label">Biometric Update Burden (BUBR)</div></div>', unsafe_allow_html=True)
+    c5.markdown(f'<div class="metric-card" style="border-left: 4px solid #F59E0B;"><div class="metric-value">{avg_dtpi:.1%}</div><div class="metric-label">Demographic Transition Pressure (DTPI)</div></div>', unsafe_allow_html=True)
 
     # --- SIMULATED SYSTEM BOOT ---
     # --- SYSTEM STATUS INDICATOR ---
@@ -1242,6 +1251,7 @@ with tab1:
                         'Chhattisgarh': (21.2787, 81.8661),
                         'Haryana': (29.0588, 76.0856),
                         'Jammu And Kashmir': (33.7782, 76.5762),
+                        'Himachal Pradesh': (31.1048, 77.1734),
                         'Uttarakhand': (30.0668, 79.0193),
                         'Arunachal Pradesh': (28.2180, 94.7278),
                         'Manipur': (24.6637, 93.9063),

@@ -282,7 +282,15 @@ def calculate_district_metrics(df):
     dist_stats = dist_stats.merge(conc_df, on='postal_district', how='left')
 
     # --- NEW ANALYTICAL MODULES (DTPI, BUBR, EQUITY RISK) ---
-    dist_stats['dtpi'] = dist_stats['age_5_17'] / (dist_stats['age_18_greater'] + 1e-9)
+    # Safe division for DTPI: handle cases where adult activity is zero to prevent infinite values
+    dist_stats['dtpi'] = np.where(
+        dist_stats['age_18_greater'] > 0,
+        dist_stats['age_5_17'] / dist_stats['age_18_greater'],
+        dist_stats['age_5_17'] # Treat as raw youth volume if no adults, or cap it (here we keep youth count as proxy)
+    )
+    # Normalize DTPI to a reasonable range if it explodes
+    dist_stats['dtpi'] = dist_stats['dtpi'].clip(0, 10.0)
+    
     dist_stats['bubr'] = dist_stats['age_18_greater'] / (dist_stats['total_activity'] + 1e-9)
     
     def classify_dtpi(val):
