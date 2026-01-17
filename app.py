@@ -1346,8 +1346,7 @@ with tab1:
                      fig_map.update_geos(
                          visible=False, 
                          projection_scale=1.0, 
-                         lataxis_range=[6.5, 37.5], 
-                         lonaxis_range=[67.0, 98.0]
+                         fitbounds="locations"
                      )
                      fig_map.update_layout(height=850, margin={"r":0,"t":0,"l":0,"b":20},
                                          coloraxis_colorbar=dict(title="Enrolments", len=0.4), autosize=True)
