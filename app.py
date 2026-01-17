@@ -454,11 +454,18 @@ def load_and_process_data(dataset_type="Enrolment"):
     LOCAL_PATH = config["local"]
     GITHUB_RAW_URL = config["url"]
     
+    # Optimized Dtypes for high-speed loading
+    dtypes = {
+        'postal_state': str,
+        'postal_district': str,
+        'pincode': str
+    }
+    
     try:
         if os.path.exists(LOCAL_PATH):
-            df = pd.read_csv(LOCAL_PATH)
+            df = pd.read_csv(LOCAL_PATH, dtype=dtypes)
         else:
-            df = pd.read_csv(GITHUB_RAW_URL)
+            df = pd.read_csv(GITHUB_RAW_URL, dtype=dtypes)
             
         df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y', errors='coerce')
         df = df.dropna(subset=['date'])
@@ -862,8 +869,8 @@ if silent_count > 0:
         "detail": f"{silent_count} districts show suspiciously low activity. Dispatch vigilance teams to inspect center operational status."
     })
     
-# 3. Child Enrolment Logic
-if child_pct < 20:
+# 3. Child Enrolment Logic (Only for Enrolment dataset)
+if dataset_type == "Enrolment" and child_pct < 20:
         recs.append({
         "type": "Strategic",
         "icon": "CHILD",
@@ -1393,21 +1400,38 @@ with tab3:
     c_age1, c_age2 = st.columns(2)
     
     with c_age1:
-        st.subheader("Child Enrolment Analysis")
-        st.markdown("Districts with lowest proportionate child enrolment")
-        laggards = dist_stats_filtered.sort_values('child_ratio', ascending=True).head(15)
-        fig_lag = px.bar(laggards, x='child_ratio', y='postal_district', orientation='h', 
-                        title="Districts with Lowest Child Enrolment Ratio", color='child_ratio', color_continuous_scale='Reds_r')
-        st.plotly_chart(fig_lag, use_container_width=True)
-        
-        # Explanatory info
-        st.markdown(""" 
-        <div style='background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;'>
-            <strong style='color: #B45309;'>What is Child Enrolment Ratio?</strong><br>
-            <span style='color: #475569;'>The percentage of 0-5 year age group enrolments compared to total enrolments in a district. 
-            Low ratios may indicate potential exclusion of young children.</span>
-        </div>
-        """, unsafe_allow_html=True)
+        if dataset_type == "Enrolment":
+            st.subheader("Child Enrolment Analysis")
+            st.markdown("Districts with lowest proportionate child enrolment")
+            laggards = dist_stats_filtered.sort_values('child_ratio', ascending=True).head(15)
+            fig_lag = px.bar(laggards, x='child_ratio', y='postal_district', orientation='h', 
+                            title="Districts with Lowest Child Enrolment Ratio", color='child_ratio', color_continuous_scale='Reds_r')
+            st.plotly_chart(fig_lag, use_container_width=True)
+            
+            # Explanatory info
+            st.markdown(""" 
+            <div style='background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;'>
+                <strong style='color: #B45309;'>What is Child Enrolment Ratio?</strong><br>
+                <span style='color: #475569;'>The percentage of 0-5 year age group enrolments compared to total enrolments in a district. 
+                Low ratios may indicate potential exclusion of young children.</span>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.subheader("Youth Enrolment Analysis")
+            st.markdown(f"Districts with lowest proportionate youth (5-17) {dataset_type} activity")
+            laggards = dist_stats_filtered.sort_values('youth_ratio', ascending=True).head(15)
+            fig_lag = px.bar(laggards, x='youth_ratio', y='postal_district', orientation='h', 
+                            title=f"Districts with Lowest Youth Ratio ({dataset_type})", color='youth_ratio', color_continuous_scale='Purples_r')
+            st.plotly_chart(fig_lag, use_container_width=True)
+            
+            # Explanatory info
+            st.markdown(f""" 
+            <div style='background: #F5F3FF; border-left: 3px solid #8B5CF6; padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;'>
+                <strong style='color: #6D28D9;'>What is Youth Enrolment Ratio?</strong><br>
+                <span style='color: #475569;'>The percentage of 5-17 year age group {dataset_type} activity compared to total activity in a district. 
+                This helps identify regions where mandatory biometric updates for youth may be lagging.</span>
+            </div>
+            """, unsafe_allow_html=True)
 
     # --- TRIVARIATE ANALYSIS (Deep Dive) ---
     st.markdown("---")

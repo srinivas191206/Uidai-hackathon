@@ -235,6 +235,9 @@ def calculate_district_metrics(df):
     # 4. Child Enrolment Ratio
     dist_stats['child_ratio'] = dist_stats['age_0_5'] / dist_stats['total_activity']
     
+    # 4b. Youth Enrolment Ratio (Proxy for younger demographics in Biometric/Demographic datasets)
+    dist_stats['youth_ratio'] = dist_stats['age_5_17'] / dist_stats['total_activity']
+    
     # 5. Update Pressure Index (Approximated as 18+ activity share)
     dist_stats['update_pressure'] = dist_stats['age_18_greater'] / dist_stats['total_activity']
     
@@ -242,9 +245,9 @@ def calculate_district_metrics(df):
     dist_stats['age_mix_imbalance'] = dist_stats['age_18_greater'] / (dist_stats['age_0_5'] + dist_stats['age_5_17'])
     
     # 7. Volatility Score & 9. Stress Persistence
-    # Calculate monthly aggregated stats per district for volatility
-    df['month'] = df['date'].dt.to_period('M')
-    monthly = df.groupby(['postal_district', 'month'])['total_activity'].sum().reset_index()
+    # Optimization: Use 'month' directly if possible, avoiding repeated string conversion
+    month_series = df['date'].dt.to_period('M')
+    monthly = df.assign(month=month_series).groupby(['postal_district', 'month'])['total_activity'].sum().reset_index()
     volatility = monthly.groupby('postal_district')['total_activity'].agg(['std', 'mean']).reset_index()
     volatility['volatility_score'] = (volatility['std'] / (volatility['mean'] + 1)).fillna(0)
     
@@ -263,21 +266,19 @@ def calculate_district_metrics(df):
     # Logic: Demand Score < 0.5 AND Volatility < 0.2 (Low activity + Stable low)
     dist_stats['is_silent_underenrolment'] = (dist_stats['demand_score'] < 0.5) & (dist_stats['volatility_score'] < 0.2)
     
-    # 8. Pincode Concentration Risk
-    # For each district, calculate share of top 10% pincodes
-    conc_risks = []
-    for district in dist_stats['postal_district'].unique():
-        d_df = df[df['postal_district'] == district]
-        pin_stats = d_df.groupby('pincode')['total_activity'].sum().sort_values(ascending=False)
-        total_dist_activity = pin_stats.sum()
-        if total_dist_activity > 0:
-            top_10_count = max(1, int(len(pin_stats) * 0.1))
-            top_share = pin_stats.head(top_10_count).sum() / (total_dist_activity + 1)
-            conc_risks.append({'postal_district': district, 'concentration_risk': top_share})
-        else:
-            conc_risks.append({'postal_district': district, 'concentration_risk': 0})
-            
-    conc_df = pd.DataFrame(conc_risks)
+    # 8. Pincode Concentration Risk (VECTORIZED)
+    # Calculate for all pincodes at once
+    pin_totals = df.groupby(['postal_district', 'pincode'])['total_activity'].sum().reset_index()
+    pin_totals = pin_totals.sort_values(['postal_district', 'total_activity'], ascending=[True, False])
+    
+    # Group by district and calculate top 10% share
+    def get_top_10_share(group):
+        total = group['total_activity'].sum()
+        if total == 0: return 0
+        n_top = max(1, int(len(group) * 0.1))
+        return group['total_activity'].head(n_top).sum() / (total + 1)
+
+    conc_df = pin_totals.groupby('postal_district').apply(get_top_10_share).reset_index(name='concentration_risk')
     dist_stats = dist_stats.merge(conc_df, on='postal_district', how='left')
 
     # --- NEW ANALYTICAL MODULES (DTPI, BUBR, EQUITY RISK) ---
