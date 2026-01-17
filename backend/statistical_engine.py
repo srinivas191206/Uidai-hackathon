@@ -384,9 +384,12 @@ def generate_awareness_impact_data(filtered_df, advertising_month_idx=None):
     
     # 1. Extract actual monthly pattern from dataset
     if 'date' in filtered_df.columns and len(filtered_df) > 0:
+        # Create a copy to avoid modifying the original dataframe
+        df_copy = filtered_df.copy()
+        
         # Group by month and calculate average activity
-        filtered_df['month_num'] = pd.to_datetime(filtered_df['date']).dt.month
-        monthly_activity = filtered_df.groupby('month_num')['total_activity'].sum().reindex(range(1, 13), fill_value=0)
+        df_copy['month_num'] = pd.to_datetime(df_copy['date']).dt.month
+        monthly_activity = df_copy.groupby('month_num')['total_activity'].sum().reindex(range(1, 13), fill_value=0)
         
         # Normalize to a reasonable scale (thousands)
         if monthly_activity.sum() > 0:
