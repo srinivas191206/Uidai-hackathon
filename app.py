@@ -947,7 +947,7 @@ if bubr_heavy_count > 0:
 st.markdown(f"**Current Scope:** {scope_name} | **Data Range:** {df['date'].min().date()} to {df['date'].max().date()}")
 
 # TABS
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Overview", 
     "District Analytics", 
     "Demographic Insights", 
