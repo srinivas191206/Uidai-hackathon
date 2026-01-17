@@ -493,6 +493,7 @@ def load_and_process_data(dataset_type="Enrolment"):
         # Global replacement for Jammu & Kashmir for consistent mapping/filtering
         df['postal_state'] = df['postal_state'].replace({
             'Jammu And Kashmir': 'Jammu & Kashmir',
+            'Ladakh': 'Jammu & Kashmir',
             'Andaman And Nicobar Islands': 'Andaman & Nicobar'
         })
         
@@ -524,6 +525,29 @@ def load_geojson():
             states = requests.get(BASE_URL + "india_states.geojson").json()
         if not districts:
             districts = requests.get(BASE_URL + "india_district.geojson").json()
+            
+        # --- GEOJSON MERGE: J&K + LADAKH ---
+        # Combine distinct polygons into one MultiPolygon feature to unify the region visually and logically
+        if states:
+            features = states.get('features', [])
+            jk = next((f for f in features if f['properties'].get('ST_NM') == 'Jammu & Kashmir'), None)
+            ladakh = next((f for f in features if f['properties'].get('ST_NM') == 'Ladakh'), None)
+            
+            if jk and ladakh:
+                # Helper to extract polygon rings
+                def get_coords(f):
+                    t = f['geometry']['type']
+                    if t == 'Polygon': return [f['geometry']['coordinates']]
+                    elif t == 'MultiPolygon': return f['geometry']['coordinates']
+                    return []
+                
+                # Merge coordinates
+                new_coords = get_coords(jk) + get_coords(ladakh)
+                jk['geometry']['type'] = 'MultiPolygon'
+                jk['geometry']['coordinates'] = new_coords
+                
+                # Remove Ladakh feature
+                states['features'] = [f for f in features if f['properties'].get('ST_NM') != 'Ladakh']
             
         return states, districts
     except Exception as e:
@@ -1263,7 +1287,6 @@ with tab1:
                         'Nagaland': (26.1584, 94.5624),
                         'Tripura': (23.9408, 91.9882),
                         'Sikkim': (27.5330, 88.5122),
-                        'Ladakh': (34.1526, 77.5771),
                         'Andaman & Nicobar': (11.7401, 92.6586),
                         'Dadra and Nagar Haveli and Daman and Diu': (20.1809, 73.0169),
                     }
