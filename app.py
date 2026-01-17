@@ -1431,19 +1431,28 @@ with tab3:
     
     heatmap_data = tri_df.groupby(['postal_district', 'month']).agg(
         total=('total_activity', 'sum'),
-        child=('age_0_5', 'sum')
+        child=('age_0_5', 'sum'),
+        youth=('age_5_17', 'sum')
     ).reset_index()
-    heatmap_data['child_ratio'] = (heatmap_data['child'] / heatmap_data['total']) * 100
+    
+    if dataset_type == "Enrolment":
+        heatmap_data['ratio'] = (heatmap_data['child'] / (heatmap_data['total'] + 1e-9)) * 100
+        z_label = "Child Ratio %"
+        title_text = "Child Enrolment Intensity Matrix (Red=Low, Blue=High)"
+    else:
+        heatmap_data['ratio'] = (heatmap_data['youth'] / (heatmap_data['total'] + 1e-9)) * 100
+        z_label = f"Youth {dataset_type} Ratio %"
+        title_text = f"Youth {dataset_type} Intensity Matrix (Red=Low, Blue=High)"
     
     fig_heat = px.density_heatmap(
         heatmap_data, 
         x='month', 
         y='postal_district', 
-        z='child_ratio', 
+        z='ratio', 
         histfunc='avg',
-        title="Child Enrolment Intensity Matrix (Red=Low, Blue=High)",
+        title=title_text,
         color_continuous_scale='RdBu',
-        labels={'postal_district': 'District', 'month': 'Month', 'child_ratio': 'Child Ratio %'}
+        labels={'postal_district': 'District', 'month': 'Month', 'ratio': z_label}
     )
     fig_heat.update_layout(height=500)
     st.plotly_chart(fig_heat, use_container_width=True)
