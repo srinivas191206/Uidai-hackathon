@@ -918,16 +918,12 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
 with tab1:
     st.markdown('<div class="section-header">National / State Overview</div>', unsafe_allow_html=True)
     
-    # --- COLD-START CONFIDENCE SUPPRESSION BANNER ---
-    if len(filtered_df['date'].unique()) < 7:
-        st.warning("Insufficient Data Confidence: Selected window has < 7 unique days. Predictive signals suppressed.")
-
-    # Closed-Loop Statistical Anomaly & Action Panel
+    # Statistical Anomaly Detection
     anomalies = detect_statistical_anomalies(filtered_df)
     
     if anomalies:
         with st.expander(f"Active Incident Monitoring: {scope_name} ({len(anomalies)})", expanded=True):
-            st.markdown("<div style='font-size: 0.85rem; color: #64748B; margin-bottom: 10px;'>High-confidence deviations identified via <b>Rolling Z-Scores</b>. All anomalies automatically trigger a closed-loop operational workflow.</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 0.85rem; color: #64748B; margin-bottom: 10px;'>High-confidence statistical anomalies identified via Rolling Z-Scores. These detections trigger automated operational workflows.</div>", unsafe_allow_html=True)
             
             # Action Flow Header
             st.markdown("""
@@ -1397,12 +1393,12 @@ with tab3:
             st.markdown(""" 
             <div style='background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;'>
                 <strong style='color: #B45309;'>What is Child Enrolment Ratio?</strong><br>
-                <span style='color: #475569;'>The percentage of 0-5 year age group enrolments compared to total enrolments in a district. 
-                Low ratios may indicate potential exclusion of young children.</span>
+                <span style='color: #475569;'>The percentage of 0-5 year age group enrolments compared to total district activity. 
+                Low values may indicate lower participation from young children.</span>
             </div>
             """, unsafe_allow_html=True)
         else:
-            st.subheader("Youth Enrolment Analysis")
+            st.subheader("Youth Activity Analysis")
             st.markdown(f"Districts with lowest proportionate youth (5-17) {dataset_type} activity")
             laggards = dist_stats_filtered.sort_values('youth_ratio', ascending=True).head(15)
             fig_lag = px.bar(laggards, x='youth_ratio', y='postal_district', orientation='h', 
@@ -1412,16 +1408,18 @@ with tab3:
             # Explanatory info
             st.markdown(f""" 
             <div style='background: #F5F3FF; border-left: 3px solid #8B5CF6; padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;'>
-                <strong style='color: #6D28D9;'>What is Youth Enrolment Ratio?</strong><br>
+                <strong style='color: #6D28D9;'>What is Youth Activity Ratio?</strong><br>
                 <span style='color: #475569;'>The percentage of 5-17 year age group {dataset_type} activity compared to total activity in a district. 
-                This helps identify regions where mandatory biometric updates for youth may be lagging.</span>
+                This identifies regions where mandatory biometric updates for youth may be lower than expected.</span>
             </div>
             """, unsafe_allow_html=True)
 
-    # --- TRIVARIATE ANALYSIS (Deep Dive) ---
+    # --- TRIVARIATE ANALYSIS ---
     st.markdown("---")
     st.subheader("trivariate analysis")
-    st.markdown("**Demographic Heatmap Matrix:** Visualizing *Activity Intensity* across **Districts** (Y) and **Time** (X), colored by **Child Enrolment Ratio**.")
+    
+    heatmap_desc = "Demographic Heatmap Matrix: Visualizing activity intensity across districts and time, colored by Child Enrolment Ratio." if dataset_type == "Enrolment" else f"Demographic Heatmap Matrix: Visualizing activity intensity across districts and time, colored by Youth {dataset_type} Ratio."
+    st.markdown(heatmap_desc)
     
     # Prepare Data for Heatmap
     # Metric: Child Ratio over Time per District (Top 20 Districts by volume)
@@ -1469,9 +1467,9 @@ with tab3:
         st.markdown(""" 
         <div style='background: #EFF6FF; border-left: 3px solid #3B82F6; padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;'>
             <strong style='color: #1D4ED8;'>What is Adult Update Load Index?</strong><br>
-            <span style='color: #475569;'>Measures the proportion of 18+ age group activities (updates, corrections, biometric renewals) 
-            relative to total district operations. High values indicate centres are primarily handling adult updates 
-            rather than new enrolments, which may require additional staffing.</span>
+            <span style='color: #475569;'>Measures the proportion of adult activities (updates, corrections, renewals) 
+            relative to total district operations. High values indicate centres are primarily handling adult updates, 
+            which may require additional staffing resources.</span>
         </div>
         """, unsafe_allow_html=True)
 
