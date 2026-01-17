@@ -946,14 +946,13 @@ if bubr_heavy_count > 0:
 st.markdown(f"**Current Scope:** {scope_name} | **Data Range:** {df['date'].min().date()} to {df['date'].max().date()}")
 
 # TABS
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Overview", 
     "District Analytics", 
     "Demographic Insights", 
     "Geographic Access", 
     "Automated Strategic Insights", 
-    "Recommendations",
-    "System Architecture"
+    "Recommendations"
 ])
 
 # --- TAB 1: OVERVIEW ---
@@ -1671,48 +1670,5 @@ with tab6:
         """, unsafe_allow_html=True)
         
 # --- TAB 7: SYSTEM ARCHITECTURE ---
-with tab7:
-    st.markdown('<div id="government-grade-data-architecture" class="section-header">Government-Grade Data Architecture</div>', unsafe_allow_html=True)
-    
-    arch_col1, arch_col2 = st.columns([1.5, 1])
-    
-    with arch_col1:
-        st.markdown("""
-        ### Scalable Production Pipeline
-        This dashboard serves as the **Presentation & Decision Layer** of a multi-stage big data pipeline. It is intentionally decoupled from raw data ingestion to ensure sub-second query performance at national scale.
-        
-        <div style='padding: 24px; background: white; border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'>
-            <div style='display: flex; flex-direction: column; gap: 15px;'>
-                <div style='display: flex; align-items: center; gap: 15px;'>
-                    <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>1</div>
-                    <div><b>Ingestion Layer:</b> Kafka-based streaming of ECMP (Enrolment Client) logs into <b>Hadoop HDFS / S3 Data Lake</b>.</div>
-                </div>
-                <div style='text-align: center; color: #94A3B8;'>|</div>
-                <div style='display: flex; align-items: center; gap: 15px;'>
-                    <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>2</div>
-                    <div><b>Processing Layer:</b> <b>Apache Spark (Databricks)</b> jobs perform heavy-lift pre-aggregation. Logic calculates Z-Scores, PSACI, and Velocity metrics in parallel.</div>
-                </div>
-                <div style='text-align: center; color: #94A3B8;'>|</div>
-                <div style='display: flex; align-items: center; gap: 15px;'>
-                    <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>3</div>
-                    <div><b>Storage Layer:</b> Aggregated Operational Cubes are stored in an <b>Indexed SQL Warehouse (Postgres/BigQuery)</b> for instant retrieval.</div>
-                </div>
-                <div style='text-align: center; color: #94A3B8;'>|</div>
-                <div style='display: flex; align-items: center; gap: 15px;'>
-                    <div style='background: #003366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;'>4</div>
-                    <div><b>Intelligence Layer:</b> This <b>Command Center</b> consumes the indexed cubes via secure APIs, providing real-time Situational Awareness.</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with arch_col2:
-        st.markdown("### Security and Governance")
-        st.info("""
-        **Data Minimization:** No PII (Name, Address, Biometrics) leaves the UIDAI secure vault. This system operates on **Anonymized Transaction Telemetry**.
-        
-        **Scalability:** The architecture is designed to handle **1,000+ simultaneous executive users** and **100M+ transaction records** per day by offloading compute to the Spark cluster.
-        
-        **Explainability:** Every index (Demand Score, PSACI) follows documented statistical formulas, ensuring all administrative actions are defensible under audit.
-        """)
+
 
