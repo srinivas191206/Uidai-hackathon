@@ -481,14 +481,21 @@ def load_and_process_data(dataset_type="Enrolment"):
                 df[col] = 0
                 
         # --- EXCLUDE LADAKH (User Selection) ---
-        if 'postal_state' in df.columns:
-            df = df[df['postal_state'].str.upper() != 'LADAKH']
+        # Removed as per user request to restore map coverage
+        pass
                 
         # 1. Total Enrolment per record
         df['total_activity'] = df['age_0_5'] + df['age_5_17'] + df['age_18_greater']
         
         # Normalize text columns
         df['postal_state'] = df['postal_state'].astype(str).str.title()
+        
+        # Global replacement for Jammu & Kashmir for consistent mapping/filtering
+        df['postal_state'] = df['postal_state'].replace({
+            'Jammu And Kashmir': 'Jammu & Kashmir',
+            'Andaman And Nicobar Islands': 'Andaman & Nicobar'
+        })
+        
         df['postal_district'] = df['postal_district'].astype(str).str.title()
         
         return df
@@ -1202,8 +1209,6 @@ with tab1:
                 
                 # Corrections
                 state_map_corrections = {
-                    'Andaman And Nicobar Islands': 'Andaman & Nicobar',
-                    'Jammu And Kashmir': 'Jammu & Kashmir',
                     'The Dadra And Nagar Haveli And Daman And Diu': 'Dadra and Nagar Haveli and Daman and Diu'
                 }
                 state_agg['postal_state'] = state_agg['postal_state'].replace(state_map_corrections)
