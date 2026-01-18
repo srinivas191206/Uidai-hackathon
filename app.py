@@ -1090,7 +1090,7 @@ with tab1:
         month_options_with_all = ["All"] + month_options
         
         # Select box now includes "All"
-        selected_ad_month_val = st.selectbox("Campaign Launch Month", month_options_with_all, index=3, key="ov_ad_month") # Index 3 is March if "All" is at 0? No idx 3 is All, Jan, Feb, March.
+        selected_ad_month_val = st.selectbox("Campaign Launch Month", month_options_with_all, index=0, key="ov_ad_month") # Default to All
         
         if selected_ad_month_val == "All":
             selected_ad_month = "All"
