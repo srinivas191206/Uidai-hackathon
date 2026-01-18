@@ -7,7 +7,7 @@ import requests
 import json
 import base64
 import os
-from datetime import datetime
+from datetime import datetime as dt
 from fpdf import FPDF
 import io
 from backend.statistical_engine import (
@@ -270,7 +270,7 @@ def generate_pdf_report(kpis, recs, insights, scope_name):
     pdf.set_text_color(255, 255, 255)
     pdf.cell(0, 10, "UIDAI EXECUTIVE STRATEGIES & OPERATIONAL DOSSIER", ln=True, align='C')
     pdf.set_font("Arial", '', 10)
-    pdf.cell(0, 10, f"Scope: {scope_name} | Generated: {datetime.now().strftime('%d %b %Y %H:%M')}", ln=True, align='C')
+    pdf.cell(0, 10, f"Scope: {scope_name} | Generated: {dt.now().strftime('%d %b %Y %H:%M')}", ln=True, align='C')
     
     pdf.set_y(45)
     pdf.set_text_color(220, 38, 38) # Red
@@ -381,7 +381,7 @@ def generate_mission_brief_html(kpis, recs, insights, scope_name):
         
         <div class="header">
             <h1>UIDAI EXECUTIVE STRATEGIES & OPERATIONAL DOSSIER</h1>
-            <p><strong>Scope:</strong> {scope_name} | <strong>Generated:</strong> {datetime.now().strftime('%d %b %Y %H:%M')}</p>
+            <p><strong>Scope:</strong> {scope_name} | <strong>Generated:</strong> {dt.now().strftime('%d %b %Y %H:%M')}</p>
         </div>
         
         <h3>1. STRATEGIC SITUATION REPORT</h3>
@@ -831,6 +831,8 @@ with col_date:
 pass
 
 # Apply Date Filter First (Global)
+df_full_history = df.copy() # PERSIST FULL HISTORY FOR SEASONALITY ANALYSIS
+
 if len(date_range) == 2:
     start_date, end_date = date_range
     # Convert to datetime64[ns] to match df['date']
@@ -1047,7 +1049,7 @@ with tab1:
             st.download_button(
                 label="Download Executive Strategy Report (PDF Optimized)",
                 data=bytes(brief_pdf),
-                file_name=f"UIDAI_Executive_Report_{datetime.now().strftime('%Y%m%d')}.pdf",
+                file_name=f"UIDAI_Executive_Report_{dt.now().strftime('%Y%m%d')}.pdf",
                 mime="application/pdf",
                 key="pdf_report_btn_overview",
                 help="Download a complete formal dossier including strategic insights and automated response protocols."
@@ -1068,310 +1070,104 @@ with tab1:
         
     c4.markdown(f'<div class="metric-card"><div class="metric-value">{len(dist_stats_filtered)}</div><div class="metric-label">Districts Active</div></div>', unsafe_allow_html=True)
 
-    # --- STRATEGIC AWARENESS IMPACT ANALYSIS (Moved to Overview) ---
-    st.markdown("---")
-    st.markdown('<div class="section-header">Strategic Awareness Campaign Impact Analysis</div>', unsafe_allow_html=True)
-    
-    # --- CONTROLS ---
+    # --- STRATEGIC AWARENESS CAMPAIGN IMPACT ANALYSIS ---
     st.markdown("""
-    <div style='background: #F8FAFC; padding: 18px; border-radius: 8px; border: 1px solid #CBD5E1; margin-bottom: 20px;'>
-        <div style='font-size: 0.95em; font-weight: 600; color: #334155; margin-bottom: 8px;'>Campaign Timing Simulator</div>
-        <div style='font-size: 0.85em; color: #64748B; line-height: 1.5;'>This tool analyzes how the timing of public awareness campaigns affects service demand patterns. Select a launch month to see projected impact on operational load.</div>
-    </div>
+    <div class="section-header">Strategic Awareness Campaign Impact Analysis</div>
     """, unsafe_allow_html=True)
-    
-    col_aw1, col_aw2 = st.columns([1, 2])
-    
-    with col_aw1:
-        month_options = ["January", "February", "March", "April", "May", "June", 
-                        "July", "August", "September", "October", "November", "December"]
-        month_options_with_all = ["All"] + month_options
+
+    # 1. Prepare Simulation Data (Using Full History to capture Seasonality)
+    sim_df = df_full_history.copy()
+    if selected_state != "All India":
+        sim_df = sim_df[sim_df['postal_state'] == selected_state]
+        if selected_district != "All":
+             sim_df = sim_df[sim_df['postal_district'] == selected_district]
+
+    # 2. Simulator Interface
+    c_sim1, c_sim2 = st.columns([1, 2])
+
+    with c_sim1:
+        st.markdown("##### Campaign Configuration")
+        st.markdown("Simulate the causal impact of an awareness drive based on regional seasonality.")
         
-        # Select box now includes "All"
-        selected_ad_month_val = st.selectbox("Campaign Launch Month", month_options_with_all, index=3, key="ov_ad_month") # Index 3 is March if "All" is at 0? No idx 3 is All, Jan, Feb, March.
+        # Month Selector (Replacing Date Range as per request)
+        month_names = ["January", "February", "March", "April", "May", "June", 
+                       "July", "August", "September", "October", "November", "December"]
         
-        if selected_ad_month_val == "All":
-            selected_ad_month = "All"
-            ad_month_idx = None 
-            df_for_month_selection = filtered_df.copy()
-        else:
-            selected_ad_month = selected_ad_month_val
-            ad_month_idx = month_options.index(selected_ad_month)
-            # Filter the original dataframe for the selected month
-            selected_month_num = ad_month_idx + 1
-            df_for_month_selection = filtered_df[pd.to_datetime(filtered_df['date']).dt.month == selected_month_num].copy()
-
-
-        if 'date' in df_for_month_selection.columns and len(df_for_month_selection) > 0:
-            min_date_available = df_for_month_selection['date'].min()
-            max_date_available = df_for_month_selection['date'].max()
-        else:
-            # Fallback: Create range for the selected month in the primary year of the dataset
-            if len(filtered_df) > 0:
-                primary_year = filtered_df['date'].dt.year.mode()[0]
-            else:
-                primary_year = datetime.now().year
-                
-            if selected_ad_month != "All":
-                 # Use known month num
-                 import calendar
-                 last_day = calendar.monthrange(int(primary_year), selected_month_num)[1]
-                 min_date_available = pd.Timestamp(year=primary_year, month=selected_month_num, day=1)
-                 max_date_available = pd.Timestamp(year=primary_year, month=selected_month_num, day=last_day)
-            else:
-                 min_date_available = filtered_df['date'].min() if len(filtered_df) > 0 else datetime(primary_year, 1, 1)
-                 max_date_available = filtered_df['date'].max() if len(filtered_df) > 0 else datetime(primary_year, 12, 31)
-
-        campaign_date_range = st.date_input(
-            "Select Date Range within Month",
-            value=(min_date_available, max_date_available),
-            min_value=min_date_available,
-            max_value=max_date_available,
-            key=f"campaign_date_range_{selected_ad_month}"
+        selected_month_name = st.selectbox(
+            "Select Campaign Launch Month",
+            options=month_names,
+            index=dt.now().month % 12, # Default to next month
+            help="Choose the month to launch the campaign. The engine analyzes historical seasonality to predict impact."
         )
-            
-        # Filter data based on selected date range
-        if len(campaign_date_range) == 2:
-            campaign_start, campaign_end = campaign_date_range
-            filtered_df_campaign = filtered_df[
-                (filtered_df['date'] >= pd.Timestamp(campaign_start)) & 
-                (filtered_df['date'] <= pd.Timestamp(campaign_end))
-            ].copy()
-        else:
-            filtered_df_campaign = filtered_df.copy()
+        launch_month_idx = month_names.index(selected_month_name)
         
+        # Run Simulation
+        sim_data, sim_insight = generate_awareness_impact_data(sim_df, advertising_month_idx=launch_month_idx)
+        
+        # Display Key Metrics
         st.markdown("---")
+        st.markdown("###### Projected Outcomes")
         
-        # Help Box
-        st.markdown("""
-        <div style='background: #EFF6FF; padding: 12px; border-radius: 6px; border-left: 3px solid #3B82F6;'>
-            <div style='font-size: 0.85em; color: #1E40AF; line-height: 1.5;'>
-                <strong>How it works:</strong> The system compares natural demand patterns (based on selected date range) with projected demand after a campaign launch. This helps identify optimal timing to avoid service overload.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        m1, m2 = st.columns(2)
+        m1.metric("Peak Amplification", f"{sim_insight['paf_score']:.1%}", help="Projected increase in peak volume vs historical average")
+        m2.metric("Operational Risk", f"{sim_insight['ori_score']:.2f}", help="> 1.0 indicates high risk of center overcrowding")
+        
+        # Color-coded Risk Warning
+        if sim_insight['ori_score'] > 1.0:
+             st.markdown(f"<div style='color: #dc2626; font-size: 0.8rem; font-weight: 600;'>⚠️ High Risk of Overload</div>", unsafe_allow_html=True)
+        else:
+             st.markdown(f"<div style='color: #16a34a; font-size: 0.8rem; font-weight: 600;'>✓ Capacity Adequate</div>", unsafe_allow_html=True)
 
-    # --- GENERATE DATA (using filtered campaign data) ---
-    impact_df, metrics = generate_awareness_impact_data(filtered_df_campaign, ad_month_idx)
-    
-    # --- VISUALIZATION (Plotly) ---
-    with col_aw2:
-        fig_impact = go.Figure()
+    with c_sim2:
+        # 3. Visualization
+        st.markdown(f"##### Impact Simulation: {selected_month_name} Launch")
         
-        # Line 1: Natural Demand
-        fig_impact.add_trace(go.Scatter(
-            x=impact_df['Month'], 
-            y=impact_df['Natural Demand'],
-            mode='lines',
-            name='Natural Demand',
-            line=dict(color='#94A3B8', width=2, dash='dot')
-        ))
-        
-        # Line 2: Observed (Advertised) Demand
-        fig_impact.add_trace(go.Scatter(
-            x=impact_df['Month'], 
-            y=impact_df['Observed Demand'],
-            mode='lines+markers',
-            name='Projected Demand (with Ad)',
-            line=dict(color='#003366', width=4)
-        ))
-        
-        # Highlight the Campaign Launch Month (Only if present in view)
-        # Highlight the Campaign Launch Month (Only if present in view)
-        if selected_ad_month in impact_df['Month'].values:
-            fig_impact.add_annotation(
-                x=selected_ad_month,
-                y=impact_df.loc[impact_df['Month'] == selected_ad_month, 'Observed Demand'].values[0],
-                text="Campaign Launch",
-                showarrow=True,
-                arrowhead=2,
-                arrowcolor="#003366",
-                ax=0,
-                ay=-50,
-                font=dict(size=11, color="#003366", family="Arial")
+        if not sim_data.empty and sim_data['Natural Demand'].sum() > 0:
+            fig_sim = go.Figure()
+            
+            # Natural Demand (Baseline)
+            fig_sim.add_trace(go.Scatter(
+                x=sim_data['Month'], 
+                y=sim_data['Natural Demand'],
+                mode='lines+markers',
+                name='Natural Demand (Baseline)',
+                line=dict(color='#94A3B8', width=2, dash='dash'),
+                fill='tozeroy',
+                fillcolor='rgba(148, 163, 184, 0.1)'
+            ))
+            
+            # Observed Demand (Simulated)
+            fig_sim.add_trace(go.Scatter(
+                x=sim_data['Month'], 
+                y=sim_data['Observed Demand'],
+                mode='lines+markers',
+                name='Projected Demand (w/ Campaign)',
+                line=dict(color='#2563EB', width=3),
+                marker=dict(size=8)
+            ))
+            
+            # Highlight Launch Month
+            fig_sim.add_vline(x=launch_month_idx, line_dash="dot", line_color="green", annotation_text="Launch")
+            
+            fig_sim.update_layout(
+                template="plotly_white", 
+                height=350,
+                legend=dict(orientation="h", y=1.1),
+                margin=dict(l=20, r=20, t=30, b=20),
+                hovermode="x unified"
             )
-        
-        # Robust Title Logic
-        # Check if first element starts with a digit (Daily: "01 Jan") vs Letter (Monthly: "January")
-        first_label = str(impact_df['Month'].iloc[0])
-        if first_label[0].isdigit():
-            chart_title = "Demand Projection (Daily Zoom)"
-        else:
-            chart_title = "Annual Demand Projection"
-
-        fig_impact.update_layout(
-            title=chart_title,
-            height=380,
-            margin=dict(l=20, r=20, t=50, b=30),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            plot_bgcolor="#FAFAFA",
-            paper_bgcolor="white"
-        )
-        st.plotly_chart(fig_impact, use_container_width=True, key="ov_impact_chart")
-        
-    # --- INSIGHT PANEL ---
-    st.subheader("Projected Operational Impact")
-    
-    # Determine Status Color
-    risk_score = metrics['overload_risk']
-    amp_factor = metrics['amplification_factor']
-    
-    if metrics['insight_type'] == "Smoothing":
-        status_color = "#16A34A"
-        headline = "Optimal Campaign Timing"
-        desc = f"Launching the campaign in {selected_ad_month} occurs two months before a natural demand peak. This timing allows the system to distribute increased demand more evenly, reducing peak load by approximately {abs(amp_factor):.0%}. This approach helps prevent service center overload."
-    elif metrics['insight_type'] == "Amplification":
-        status_color = "#DC2626"
-        headline = "High Risk: Peak Amplification Detected"
-        desc = f"Launching the campaign in {selected_ad_month} coincides with or immediately precedes a natural demand peak. This timing is projected to increase the peak by {amp_factor:.0%}, which may exceed operational capacity and cause service delays."
-    else:
-        status_color = "#2563EB"
-        headline = "Standard Campaign Impact"
-        desc = f"Launching the campaign in {selected_ad_month} is expected to generate moderate awareness without significantly affecting existing demand patterns. The timing does not align closely with major seasonal peaks."
-
-    st.markdown(f"""
-    <div style='background: {status_color}08; border-left: 4px solid {status_color}; padding: 22px; border-radius: 6px; margin-top: 20px;'>
-        <div style='margin-bottom: 12px;'>
-            <div style='font-weight: 700; color: {status_color}; font-size: 1.1em; margin-bottom: 8px;'>{headline}</div>
-            <div style='font-size: 0.95em; color: #334155; line-height: 1.6;'>{desc}</div>
-        </div>
-        <div style='margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border-top: 1px solid {status_color}20; padding-top: 18px;'>
-            <div>
-                <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Peak Overload Risk</div>
-                <div style='font-size: 1.6em; font-weight: 700; color: #1E293B;'>{risk_score:.2f}</div>
-                <div style='font-size: 0.7em; color: #94A3B8; margin-top: 2px;'>Threshold: 0.85</div>
-            </div>
-            <div>
-                <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Peak Change</div>
-                <div style='font-size: 1.6em; font-weight: 700; color: #1E293B;'>{amp_factor:+.0%}</div>
-                <div style='font-size: 0.7em; color: #94A3B8; margin-top: 2px;'>vs Natural Pattern</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # --- MONTH-SPECIFIC INSIGHTS ---
-    st.markdown("---")
-    st.subheader(f"Actual Data Insights for {selected_ad_month}")
-    
-    # Extract actual data for the selected month
-    month_num = ad_month_idx + 1  # Convert 0-indexed to 1-indexed month
-    
-    if 'date' in filtered_df_campaign.columns and len(filtered_df_campaign) > 0:
-        # Create a copy and extract month
-        df_month = filtered_df_campaign.copy()
-        df_month['month'] = pd.to_datetime(df_month['date']).dt.month
-        df_month['year'] = pd.to_datetime(df_month['date']).dt.year
-        
-        # Filter for selected month across all years
-        month_data = df_month[df_month['month'] == month_num]
-        
-        if len(month_data) > 0:
-            # Calculate metrics from actual data
-            total_activity_month = month_data['total_activity'].sum()
-            avg_daily_month = month_data.groupby('date')['total_activity'].sum().mean()
-            unique_dates = month_data['date'].nunique()
+            st.plotly_chart(fig_sim, use_container_width=True)
             
-            # Date range
-            min_date = month_data['date'].min()
-            max_date = month_data['date'].max()
-            
-            # Age breakdown - safely check if columns exist
-            if 'age_0_4' in month_data.columns and 'age_5_17' in month_data.columns:
-                child_activity = month_data['age_0_4'].sum() + month_data['age_5_17'].sum()
-            else:
-                child_activity = total_activity_month * 0.3  # Estimate 30%
-            
-            if 'age_18_greater' in month_data.columns:
-                adult_activity = month_data['age_18_greater'].sum()
-            else:
-                adult_activity = total_activity_month * 0.7  # Estimate 70%
-            
-            data_note = ""
-        else:
-            # No data for this specific month - use estimated values based on overall average
-            total_activity_overall = filtered_df_campaign['total_activity'].sum()
-            avg_monthly = total_activity_overall / 12  # Rough estimate
-            avg_daily_overall = filtered_df_campaign.groupby('date')['total_activity'].sum().mean()
-            
-            total_activity_month = avg_monthly
-            avg_daily_month = avg_daily_overall
-            unique_dates = 30  # Approximate
-            
-            # Estimate date range for current year
-            import datetime
-            current_year = datetime.datetime.now().year
-            min_date = pd.Timestamp(f"{current_year}-{month_num:02d}-01")
-            max_date = pd.Timestamp(f"{current_year}-{month_num:02d}-{unique_dates}")
-            
-            # Age breakdown estimate
-            child_activity = total_activity_month * 0.3  # Assume 30% youth
-            adult_activity = total_activity_month * 0.7
-            
-            data_note = f"""
-            <div style='background: #FEF3C7; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid #F59E0B;'>
-                <div style='font-size: 0.8em; color: #92400E;'>
-                    <strong>Note:</strong> No historical data available for {selected_ad_month}. Showing estimated metrics based on overall average patterns.
-                </div>
-            </div>
-            """
-        
-        # Display note if using estimates
-        if data_note:
-            st.markdown(data_note, unsafe_allow_html=True)
-            
-            # Display insights
-            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-            
-            with col_m1:
-                st.markdown(f"""
-                <div style='background: #F0F9FF; padding: 16px; border-radius: 8px; border-left: 3px solid #0284C7;'>
-                    <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; margin-bottom: 4px;'>Total Activity</div>
-                    <div style='font-size: 1.8em; font-weight: 700; color: #0F172A;'>{format_indian(total_activity_month)}</div>
-                    <div style='font-size: 0.7em; color: #94A3B8; margin-top: 4px;'>in {selected_ad_month}</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with col_m2:
-                st.markdown(f"""
-                <div style='background: #F0FDF4; padding: 16px; border-radius: 8px; border-left: 3px solid #16A34A;'>
-                    <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; margin-bottom: 4px;'>Daily Average</div>
-                    <div style='font-size: 1.8em; font-weight: 700; color: #0F172A;'>{format_indian(avg_daily_month)}</div>
-                    <div style='font-size: 0.7em; color: #94A3B8; margin-top: 4px;'>per day</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with col_m3:
-                child_pct = (child_activity / total_activity_month * 100) if total_activity_month > 0 else 0
-                st.markdown(f"""
-                <div style='background: #FEF3C7; padding: 16px; border-radius: 8px; border-left: 3px solid #F59E0B;'>
-                    <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; margin-bottom: 4px;'>Youth Share</div>
-                    <div style='font-size: 1.8em; font-weight: 700; color: #0F172A;'>{child_pct:.1f}%</div>
-                    <div style='font-size: 0.7em; color: #94A3B8; margin-top: 4px;'>Age 0-17</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with col_m4:
-                st.markdown(f"""
-                <div style='background: #F5F3FF; padding: 16px; border-radius: 8px; border-left: 3px solid #7C3AED;'>
-                    <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; margin-bottom: 4px;'>Data Coverage</div>
-                    <div style='font-size: 1.8em; font-weight: 700; color: #0F172A;'>{unique_dates}</div>
-                    <div style='font-size: 0.7em; color: #94A3B8; margin-top: 4px;'>days recorded</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # Date range info
+            # Insight Narrative
             st.markdown(f"""
-            <div style='background: #FAFAFA; padding: 14px; border-radius: 6px; margin-top: 15px; border: 1px solid #E2E8F0;'>
-                <div style='font-size: 0.85em; color: #64748B;'>
-                    <strong>Date Range:</strong> {min_date.strftime('%B %d, %Y')} to {max_date.strftime('%B %d, %Y')}
-                </div>
+            <div style='background: #F0F9FF; border-left: 4px solid #0EA5E9; padding: 12px; border-radius: 6px; font-size: 0.9rem;'>
+                <strong>AI Insight:</strong> {sim_insight['statement']}<br>
+                <span style='color: #475569;'>{sim_insight['explanation']}</span>
             </div>
             """, unsafe_allow_html=True)
-    else:
-        st.warning("Insufficient data to display month-specific insights.")
-    
-    st.markdown("---")
+            
+        else:
+            st.warning("Insufficient historical data to generate simulation.")
 
     # --- SIMULATED SYSTEM BOOT ---
     # --- SYSTEM STATUS INDICATOR ---
@@ -1907,7 +1703,7 @@ with tab5:
     
     brief_html = generate_mission_brief_html(kpis, recs, insights, scope_name)
     b64 = base64.b64encode(brief_html.encode()).decode()
-    href = f'<a href="data:file/html;base64,{b64}" download="UIDAI_Mission_Brief_{datetime.now().strftime("%Y%m%d")}.html" style="text-decoration:none;">'
+    href = f'<a href="data:file/html;base64,{b64}" download="UIDAI_Mission_Brief_{dt.now().strftime("%Y%m%d")}.html" style="text-decoration:none;">'
     
 
     
