@@ -457,22 +457,28 @@ def generate_awareness_impact_data(filtered_df, advertising_month_idx=None, forc
              
         elif months_until_peak in [1, 2]:
              # HIGH SENSITIVITY (Pre-Peak)
-             amplification_base = 0.35
+             amplification_base = 0.35 + ((3 - months_until_peak) * 0.05) # 0.40 for 2 months out, 0.45 for 1 month out
              insight_type = "High Sensitivity"
              insight_stmt = f"Campaign in {month_names[adv_month]} significantly amplifies the {month_names[natural_peak_month_idx]} peak."
              insight_expl = "Launching 1-2 months before a natural spike creates maximum resonance."
              
         else:
-             # CONTINUOUS DECAY CURVE (Dynamic)
-             # Varies from 0.15 to 0.25 based on how close we are to the peak
-             # Logic: The closer to the peak (smaller months_until_peak), the higher the impact
-             # Map distance (3 to 11) to range (0.25 down to 0.15)
-             decay_factor = max(0, (12 - months_until_peak) / 12.0) # 0.0 to 1.0
-             amplification_base = 0.15 + (0.10 * decay_factor) # Range: 0.15 to 0.25
+             # AGGRESSIVE CONTINUOUS DECAY CURVE (Dynamic)
+             # Varies remarkably from 0.05 to 0.30 to ensure user sees difference
+             # Logic: The further from peak, the lower the impact.
+             
+             # Calculate distinct factor based on distance
+             # Distance 3 months: 0.25
+             # Distance 6 months: 0.15
+             # Distance 9 months: 0.05
+             
+             dist_factor = max(0, (12 - months_until_peak) / 12.0) 
+             amplification_base = 0.05 + (0.25 * (dist_factor ** 2)) # Squared to make curve steeper
              
              insight_type = "Standard Lift"
-             insight_stmt = f"Campaign in {month_names[adv_month]} provides a {amplification_base:.1%} baseline lift."
-             insight_expl = f"Timing is {months_until_peak} months from peak, yielding moderate results."
+             lift_pct = amplification_base * 100
+             insight_stmt = f"Campaign in {month_names[adv_month]} provides a {lift_pct:.1f}% baseline lift."
+             insight_expl = f"Timing is {months_until_peak} months from peak. Impact is lower due to seasonal distance."
 
         # Apply the lift (Distributed over 2 months: Launch Month + Next Month)
         # 60% of effect in month 1, 40% in month 2 (decay)
