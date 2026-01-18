@@ -9,7 +9,6 @@ import base64
 import os
 from datetime import datetime
 from fpdf import FPDF
-import io
 import calendar
 from backend.statistical_engine import (
     calculate_district_metrics,
@@ -83,19 +82,22 @@ st.markdown(f"""
         letter-spacing: 0.5px;
     }}
     .how-it-works {{
-        color: white;
+        color: #003366;
         text-decoration: none;
         font-size: 0.85rem;
-        font-weight: 500;
-        padding: 6px 14px;
-        background-color: #3B82F6;
+        font-weight: 600;
+        padding: 6px 16px;
+        background-color: #FFFFFF;
+        border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 6px;
-        transition: all 0.2s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }}
     .how-it-works:hover {{
-        background-color: #2563EB;
-        transform: translateY(-1px);
+        background-color: #F8FAFC;
+        color: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }}
     
     /* Hide all Streamlit-specific elements for a custom portal look */
@@ -222,8 +224,7 @@ st.markdown(f"""
 
 
 
-# REDUNDANT STYLING REMOVED
-pass
+
 
 # --- INDIAN NUMBER FORMATTING ---
 def format_indian(num):
@@ -493,9 +494,7 @@ def load_and_process_data(dataset_type="Enrolment"):
             if col not in df.columns:
                 df[col] = 0
                 
-        # --- EXCLUDE LADAKH (User Selection) ---
-        # Removed as per user request to restore map coverage
-        pass
+
                 
         # 1. Total Enrolment per record
         df['total_activity'] = df['age_0_5'] + df['age_5_17'] + df['age_18_greater']
@@ -746,8 +745,7 @@ df = load_and_process_data(dataset_type)
 if df.empty:
     st.stop()
 # Dashboard controls panel at the top with all 3 filters
-# REDUNDANT SPACER REMOVED
-pass
+
 
 # 1. PROCESS MAP SELECTION EARLY (Fixes state mutation error)
 if 'map_select' in st.session_state and st.session_state.map_select:
@@ -1342,6 +1340,22 @@ with tab1:
         
         st.plotly_chart(fig, use_container_width=True)
         
+        # Informational Disclosure Checklist
+        st.markdown("""
+        <div style='background: #F0F9FF; border-left: 4px solid #0EA5E9; padding: 12px 18px; border-radius: 8px; margin-bottom: 25px;'>
+            <div style='display: flex; align-items: start; gap: 12px;'>
+                <div style='color: #0284C7; font-size: 1.4rem; font-weight: 700;'>ℹ️</div>
+                <div>
+                    <div style='color: #0369A1; font-weight: 700; font-size: 1rem; margin-bottom: 4px;'>What does this mean?</div>
+                    <div style='color: #475569; font-size: 0.9rem; line-height: 1.5;'>
+                        This simulator estimates relative uplift under different campaign lead-times. 
+                        It does not predict exact enrolment counts but helps compare timing strategies.
+                    </div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
         # --- 4. STATE INSIGHT PANEL ---
         st.markdown("### Strategic Insight Panel")
         
@@ -1451,8 +1465,7 @@ with tab1:
                     </div>
                 """, unsafe_allow_html=True)
         
-        # Simulated impact calculation removed as per user request
-        pass
+
     
     # Styled section divider
     st.markdown("""

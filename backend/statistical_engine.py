@@ -132,27 +132,6 @@ def calculate_psaci_index(df):
     return pin_stats.sort_values('psaci_score', ascending=False)
 
 
-def calculate_temporal_impact(df, policy_date):
-    """
-    Computes policy impact over a 14-day pre/post window.
-    Impact = (PostAvg - PreAvg) / PreAvg * 100
-    """
-    policy_dt = pd.to_datetime(policy_date)
-    pre_window = df[(df['date'] >= policy_dt - pd.Timedelta(days=14)) & (df['date'] < policy_dt)]
-    post_window = df[(df['date'] >= policy_dt) & (df['date'] < policy_dt + pd.Timedelta(days=14))]
-    
-    pre_avg = pre_window.groupby('date')['total_activity'].sum().mean() if not pre_window.empty else 0
-    post_avg = post_window.groupby('date')['total_activity'].sum().mean() if not post_window.empty else 0
-    
-    impact = ((post_avg - pre_avg) / (pre_avg + 1e-9)) * 100 if pre_avg > 0 else 0
-    
-    return {
-        "pre_avg": pre_avg,
-        "post_avg": post_avg,
-        "impact_pct": impact,
-        "pre_data": pre_window.groupby('date')['total_activity'].sum().reset_index(),
-        "post_data": post_window.groupby('date')['total_activity'].sum().reset_index()
-    }
 
 
 def simulate_policy_impact(current_daily_capacity, current_backlog, added_capacity_units, center_hours_increase):

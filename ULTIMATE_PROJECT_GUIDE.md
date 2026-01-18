@@ -38,29 +38,36 @@ Instead of a heavy SQL backend, the prototype uses a **Vectorized NumPy Engine**
   $$S_{demand} = \frac{Volume_{district}}{\mu(National\ District\ Volume)}$$
 - **Update Pressure Index**: Estimates work intensity based on adult update volume.
   $$I_{update} = \frac{Adult\ Activities (18+)}{Total\ Activity}$$
-- **Age Mix Imbalance**: Detects lack of child enrolments.
-  $$B_{age} = \frac{Adults}{Children + Youth}$$
+- **DTPI (Demographic Transition Pressure Index)**: Predicts upcoming load surges as children age into the 18+ biometric update cycle.
+  $$DTPI = \frac{Age_{5-17}\ Volume}{Age_{18+}\ Volume}$$
+- **BUBR (Biometric Update Burden Ratio)**: Measures the share of adult biometric corrections/updates.
+  $$BUBR = \frac{Adult\ Activities (18+)}{Total\ Activity}$$
 
-### 3.2. PSACI (Access Pressure Index)
-The **Pincode Service Access Concentration Index** identifies infrastructure blindspots.
-$$PSACI = (D_{norm} \cdot 0.4) + (C_{norm} \cdot 0.3) + (V_{norm} \cdot 0.3)$$
-- **Components**: Normalized Demand ($D$), Child Concentration ($C$), and Operational Volatility ($V$).
+### 3.2. Geographic Equity & Access
+- **PSACI (Access Pressure Index)**: Identifies infrastructure blindspots using a composite of volume and saturation proxies.
+  $$PSACI = (Vol_{norm} \cdot 0.5) + (ChildRatio_{norm} \cdot 0.5)$$
+- **Pincode Concentration Risk**: Measures whether services are urban-centric.
+  $$Risk_{conc} = \frac{\sum Activity\ in\ Top\ 10\%\ Pincodes}{Total\ Activity}$$
 
-### 3.3. Predictive Analytics (Holt-Linear)
-The system predicts the next 15 days of enrolment volume using **Holt-Linear Exponential Smoothing**:
-1. **Level ($L_t$)**: $L_t = \alpha Y_t + (1-\alpha)(L_{t-1} + T_{t-1})$
-2. **Trend ($T_t$)**: $T_t = \beta(L_t - L_{t-1}) + (1-\beta)T_{t-1}$
-3. **Forecast**: $F_{t+h} = (L_t + hT_t) \cdot Damping(0.8)$
+### 3.3. Predictive & Causal Models
+- **Predictive Analytics (Holt-Linear)**: Forecasts a 15-day enrolment trend with weekly seasonality.
+  $$F_{t+h} = (m \cdot x + c) + (Seasonality_{weekly} \cdot 0.8)$$
+- **Campaign Timing Simulator**: Models the marginal ROI of awareness campaigns based on proximity to natural demand peaks.
+  $$Lift = NaturalDemand \times Ab(LeadTime)$$
+  - **PAF (Peak Amplification Factor)**: $\frac{NewPeak - NaturalPeak}{NaturalPeak}$
+  - **ORI (Ops Risk Index)**: $\frac{NewPeak}{NaturalPeak \cdot 1.15}$
 
 ### 3.4. Anomaly Detection (Z-Score)
-Flags significant deviations in daily activity.
-$$Z = \frac{x - \mu_{7d}}{\sigma_{7d} + \epsilon}$$
-- **Threshold**: $|Z| > 2.0$ triggers an incident (Spike/Drop).
+- **Daily Activity Alerts**: Flags significant deviations (Spikes/Drops).
+  $$Z = \frac{x - \mu_{7d}}{\sigma_{7d} + \epsilon}$$
+- **Threshold**: $|Z| > 2.0$ triggers automated risk interpretation.
 
-### 3.5. Algorithmic Segmentation (K-Means)
-Districts are segmented into 3 operational zones using **WCSS Optimization** ($J$):
-$$J = \sum \sum ||x - \mu_k||^2$$
-- Zones: **High-Intensity (Critical)**, **Steady State**, **Outreach Needed**.
+### 3.5. Infrastructure Simulation
+- **Policy Simulator**: Estimates "Days to Clear Backlog" based on personnel and hour adjustments.
+  $$Days = \frac{Backlog}{DailyCapacity_{New} - DailyDemand_{Approx}}$$
+
+### 3.6. Algorithmic Segmentation (K-Means)
+- **District Clustering**: Segmenting districts into operational zones (Critical, Monitoring, Stable) using **WCSS Optimization**.
 
 ---
 
