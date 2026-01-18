@@ -1219,6 +1219,42 @@ with tab1:
         status_color = "#DC2626" # Red/Warning
         headline = "Fiscal Year End High Demand"
         desc = f"March is historically a high-volume month due to fiscal year-end requirements. Launching a campaign now risks compounding the natural 'End of Financial Year' rush, potentially leading to a {amp_factor:.0%} amplification in wait times."
+    elif selected_ad_month == "April":
+        status_color = "#16A34A" # Green
+        headline = "New Financial Year Cycle"
+        desc = f"April marks the beginning of the new financial year. Historical patterns suggest a 'Reset Phase' with moderate footfall. It is an optimal window for targeted campaigns before the summer rush begins."
+    elif selected_ad_month == "May":
+        status_color = "#F59E0B" # Orange/Warning
+        headline = "Summer Vacation Pre-Rush"
+        desc = f"May often sees increasing demand as families utilize summer vacations for updates. Launching now requires careful capacity planning to handle the student demographic surge expected in June."
+    elif selected_ad_month == "June":
+        status_color = "#DC2626" # Red/Critical
+        headline = "Academic Admission Season Peak"
+        desc = f"June correlates with school and college admissions, driving the highest annual demand for 5-17 year age updates. Launching a general awareness campaign now is NOT recommended as it will violently aggravate the existing capacity crunch."
+    elif selected_ad_month == "July":
+        status_color = "#2563EB" # Blue
+        headline = "Monsoon Operational Window"
+        desc = f"July typically experiences logistical challenges due to the monsoon, often dampening physical footfall. A digital-first campaign strategy is recommended here to balance the reduced physical access to centers."
+    elif selected_ad_month == "August":
+        status_color = "#16A34A" # Green
+        headline = "Pre-Festival Awareness Drive"
+        desc = f"August offers a stable operational window before the major festival season. It is an ideal time for 'MBU (Mandatory Biometric Update)' campaigns, ensuring citizens are ready before the holiday period distractions."
+    elif selected_ad_month == "September":
+        status_color = "#F59E0B" # Orange
+        headline = "Scholarship Season & Post-Monsoon Recovery"
+        desc = f"Demand often rises in September due to scholarship applications. While not a critical peak, campaigns should be targeted specifically at the 5-18 age group to avoid unnecessary crowding from other demographics."
+    elif selected_ad_month == "October":
+        status_color = "#16A34A" # Green
+        headline = "Festival Season Opportunity"
+        desc = f"October often sees a dip in natural demand due to major festivals. This is a 'Counter-Cyclical' opportunity to run high-intensity campaigns to utilize idle center capacity effectively."
+    elif selected_ad_month == "November":
+        status_color = "#2563EB" # Blue
+        headline = "Post-Festival Backlog Clearance"
+        desc = f"November usually involves clearing backlogs from the festival season. A moderate campaign focusing on 'Mobile Updates' can help reduce footfall strain while maintaining engagement."
+    elif selected_ad_month == "December":
+        status_color = "#16A34A" # Green
+        headline = "Winter Session Stability"
+        desc = f"December offers one of the most stable demand patterns of the year. It is the safest month for broad, high-impact awareness campaigns with minimal risk of system overload."
     elif metrics['insight_type'] == "Smoothing":
         status_color = "#16A34A"
         headline = "Optimal Campaign Timing"
