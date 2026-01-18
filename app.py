@@ -10,6 +10,7 @@ import os
 from datetime import datetime
 from fpdf import FPDF
 import io
+import calendar
 from backend.statistical_engine import (
     calculate_district_metrics,
     perform_custom_clustering,
@@ -1298,11 +1299,12 @@ with tab1:
             
             total_activity_month = avg_monthly
             avg_daily_month = avg_daily_overall
-            unique_dates = 30  # Approximate
-            
             # Estimate date range for current year
             import datetime
             current_year = datetime.datetime.now().year
+            _, days_in_month = calendar.monthrange(current_year, month_num)
+            unique_dates = days_in_month
+
             min_date = pd.Timestamp(f"{current_year}-{month_num:02d}-01")
             max_date = pd.Timestamp(f"{current_year}-{month_num:02d}-{unique_dates}")
             
