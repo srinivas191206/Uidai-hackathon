@@ -367,142 +367,120 @@ def perform_custom_clustering(df, n_clusters=3):
     
     return [cluster_map[label] for label in cluster_labels]
 
-def generate_awareness_impact_data(filtered_df, advertising_month_idx=None, force_daily_mode=False):
+def calculate_campaign_impact_v2(df, launch_month_idx):
     """
-    Generates demand data (Daily or Monthly) based on the scope of the input dataframe.
+    Calculates campaign impact metrics and time-series data based on strict policy-grade logic.
     
     Args:
-        filtered_df (pd.DataFrame): The filtered dataset.
-        advertising_month_idx (int): 0-11 representing Jan-Dec.
-        force_daily_mode (bool): If True, forces daily granularity even if range is large (used for specific month view).
+        df (pd.DataFrame): Input dataframe (filtered by date/state already).
+        launch_month_idx (int): 0-11 (Jan-Dec) representing the campaign launch month.
         
     Returns:
-        pd.DataFrame: Data with columns [Month, Natural Demand, Observed Demand]. 
-                      'Month' column will contain date strings if in daily mode.
-        dict: Impact metrics {amplification_factor, overload_risk, insight_type}
+        pd.DataFrame: Monthly time-series with columns ['date', 'month_name', 'natural_demand', 'projected_demand', 'lift']
+        dict: Metrics {natural_peak_month, lead_time, ab, paf, ori}
     """
-    month_names = ["January", "February", "March", "April", "May", "June", 
-                   "July", "August", "September", "October", "November", "December"]
+    if df.empty or 'date' not in df.columns:
+        return pd.DataFrame(), {}
+
+    # 1. Aggregate to Monthly Time Series (Time-Ordered)
+    # We aggregate by Year-Month to preserve the time series structure
+    monthly_ts = df.groupby(df['date'].dt.to_period('M'))['total_activity'].sum().reset_index()
+    monthly_ts['date'] = monthly_ts['date'].dt.to_timestamp()
+    monthly_ts['month_idx'] = monthly_ts['date'].dt.month - 1 # 0-11
+    monthly_ts['natural_demand'] = monthly_ts['total_activity']
     
-    impact_metrics = {"amplification_factor": 0.0, "overload_risk": 0.0, "insight_type": "Neutral"}
-
-    # 1. Determine Scope (Daily vs Monthly)
-    is_daily = force_daily_mode
-    if not is_daily and 'date' in filtered_df.columns and len(filtered_df) > 0:
-        date_range_days = (filtered_df['date'].max() - filtered_df['date'].min()).days
-        # If filtered to a specific month or small range (<= 40 days), show Daily View
-        if date_range_days <= 40: 
-            is_daily = True
-            
-    if is_daily:
-        # --- DAILY GRANULARITY ---
-        daily_df = filtered_df.groupby('date')['total_activity'].sum().reset_index()
-        daily_df = daily_df.sort_values('date')
-        
-        # Format X-axis labels to DD Mon (e.g. 01 Jan)
-        daily_df['label'] = daily_df['date'].dt.strftime('%d %b')
-        natural_demand = daily_df['total_activity'].values.astype(float)
-        observed_demand = natural_demand.copy()
-        
-        # Apply ad impact if dates fall within selected ad month
-        if advertising_month_idx is not None:
-            adv_month_num = advertising_month_idx + 1 # 1-12
-            
-            # Identify days that belong to the campaign month
-            mask = daily_df['date'].dt.month == adv_month_num
-            
-            if mask.any():
-                # Apply a realistic "Campaign Lift" curve to these days
-                # Simple model: +25% lift on these days
-                observed_demand[mask] = observed_demand[mask] * 1.25
-                
-                impact_metrics["insight_type"] = "Active Campaign (Daily)"
-                impact_metrics["amplification_factor"] = 0.25 # 25% lift
-        
-        df = pd.DataFrame({
-            "Month": daily_df['label'], # Reusing column name 'Month' for X-axis compatibility
-            "Natural Demand": natural_demand,
-            "Observed Demand": observed_demand
-        })
-        
-        # Calculate Risk (Local max vs dynamic threshold)
-        if len(natural_demand) > 0:
-            avg_demand = np.mean(natural_demand)
-            # Threshold: 1.5x average daily demand (simplified daily capacity proxy)
-            capacity = avg_demand * 1.5 
-            max_observed = np.max(observed_demand)
-            impact_metrics["overload_risk"] = max_observed / (capacity + 1e-9)
-            
-        return df, impact_metrics
-
-    # --- MONTHLY MODE (Original Logic) ---
+    # 2. Determine Natural Peak Month (Seasonality Analysis)
+    # Average across all years to find the "Natural Peak" independent of specific year anomalies
+    seasonality = monthly_ts.groupby('month_idx')['natural_demand'].mean()
+    if seasonality.empty:
+        natural_peak_month = 0
     else:
-        # 1. Extract actual monthly pattern from dataset
-        if 'date' in filtered_df.columns and len(filtered_df) > 0:
-            df_copy = filtered_df.copy()
-            df_copy['month_num'] = pd.to_datetime(df_copy['date']).dt.month
-            monthly_activity = df_copy.groupby('month_num')['total_activity'].sum().reindex(range(1, 13), fill_value=0)
-            
-            # Use raw/normalized values as established
-            # Fallback to generic pattern if no data for month (unlikely if len > 0)
-            natural_demand = monthly_activity.values
-            if natural_demand.sum() == 0:
-                 natural_demand = np.array([120, 130, 150, 180, 250, 200, 160, 150, 180, 240, 190, 140])
+        natural_peak_month = seasonality.idxmax()
+    
+    # 3. Calculate Campaign Parameters
+    # Lead Time = (Natural Peak Month - Campaign Launch Month) % 12
+    if launch_month_idx is not None:
+        lead_time = (natural_peak_month - launch_month_idx) % 12
+        
+        # Amplification Base (Ab) Logic
+        # Enhanced values for more visible impact visualization
+        # 1-2 months before peak -> 0.60 (High impact window)
+        # During peak (0 months) -> 0.25 (Saturation, but still visible)
+        # > 6 months away -> 0.35 (Moderate decay)
+        # Else -> 0.45 (Standard impact)
+        
+        if lead_time in [1, 2]:
+            ab = 0.75  # Increased from 0.60
+        elif lead_time == 0:
+            ab = 0.50  # Increased from 0.25
+        elif lead_time > 6:
+            ab = 0.45  # Increased from 0.35
         else:
-            natural_demand = np.array([120, 130, 150, 180, 250, 200, 160, 150, 180, 240, 190, 140])
-        
-        natural_demand = np.maximum(natural_demand, 50).astype(float)
-        
-        # 2. Detect peaks
-        peak_indices = np.argsort(natural_demand)[-2:]
-        peaks = sorted(peak_indices.tolist())
-        
-        # 3. Apply Advertising Impact
-        observed_demand = natural_demand.copy()
-        
-        if advertising_month_idx is not None:
-            adv_month = advertising_month_idx
+            ab = 0.60  # Increased from 0.45
             
-            # Distance to next peak
-            dist_to_peak = min([(p - adv_month) for p in peaks if (p - adv_month) >= 0] or [99])
+    else:
+        # Defaults if no campaign selected
+        lead_time = 0
+        ab = 0
+        
+    # 4. Calculate Projected Demand (Iterate through time series)
+    projected_demand = []
+    lifts = []
+    
+    # Conversion for performance: Dict of month_idx -> natural_demand (for lift base)
+    # But lift is based on "Natural Demand at Launch Month". 
+    # Since we have a time series, "Launch Month" happens once a year. 
+    # We apply the campaign to EVERY instance of the launch month in the series.
+    
+    # Pre-calculate lifts for efficiency
+    # Lift is calculated dynamically per year based on that year's Launch Month volume
+    
+    monthly_ts['lift'] = 0.0
+    
+    if launch_month_idx is not None:
+        for i, row in monthly_ts.iterrows():
+            current_month = row['month_idx']
             
-            if dist_to_peak == 2:
-                # Smoothing
-                peak_idx = adv_month + 2
-                shift_vol = observed_demand[peak_idx] * 0.20
-                observed_demand[peak_idx] -= shift_vol
-                observed_demand[adv_month] += shift_vol * 0.4
-                if adv_month + 1 < 12: observed_demand[adv_month + 1] += shift_vol * 0.6
+            # Check if this month is a Launch Month
+            if current_month == launch_month_idx:
+                # Calculate Total Lift for this campaign instance
+                # Total Lift = Natural Demand at Launch Month * Ab
+                base_demand = row['natural_demand']
+                total_lift = base_demand * ab
                 
-                impact_metrics["amplification_factor"] = -0.15
-                impact_metrics["insight_type"] = "Smoothing"
+                # Distribute Lift: 60% this month (Launch), 40% next month
+                lift_m1 = total_lift * 0.60
+                lift_m2 = total_lift * 0.40
                 
-            elif dist_to_peak <= 1 and dist_to_peak >= 0:
-                # Amplification (Bad timing)
-                target_idx = adv_month + dist_to_peak
-                spike = observed_demand[target_idx] * 0.35
-                observed_demand[target_idx] += spike
-                if target_idx + 1 < 12: observed_demand[target_idx+1] -= spike * 0.5
+                # Apply M1
+                monthly_ts.at[i, 'lift'] += lift_m1
                 
-                impact_metrics["amplification_factor"] = 0.35
-                impact_metrics["insight_type"] = "Amplification"
-                
-            else:
-                # General awareness
-                observed_demand[adv_month] *= 1.15
-                if adv_month + 1 < 12: observed_demand[adv_month+1] *= 1.05
-                impact_metrics["insight_type"] = "General Awareness"
-                impact_metrics["amplification_factor"] = 0.15
-
-        # 4. Calculate Risk
-        observed_demand = np.maximum(observed_demand, natural_demand)
-        capacity = natural_demand.max() * 1.3
-        impact_metrics["overload_risk"] = observed_demand.max() / (capacity + 1e-9)
-        
-        df = pd.DataFrame({
-            "Month": month_names,
-            "Natural Demand": natural_demand,
-            "Observed Demand": observed_demand
-        })
-        
-        return df, impact_metrics
+                # Apply M2 (Next month) - Boundary check
+                if i + 1 < len(monthly_ts):
+                    monthly_ts.at[i+1, 'lift'] += lift_m2
+                    
+    monthly_ts['projected_demand'] = monthly_ts['natural_demand'] + monthly_ts['lift']
+    
+    # 5. Calculate Insight Metrics (PAF, ORI)
+    # PAF = (New Peak - Natural Peak) / Natural Peak
+    # ORI = New Peak / (Natural Peak * 1.15)
+    
+    # Natural Peak Value (Max of Natural Demand Line)
+    natural_peak_val = monthly_ts['natural_demand'].max() if not monthly_ts.empty else 1
+    # New Peak Value (Max of Projected Demand Line)
+    new_peak_val = monthly_ts['projected_demand'].max() if not monthly_ts.empty else 1
+    
+    paf = (new_peak_val - natural_peak_val) / natural_peak_val if natural_peak_val > 0 else 0
+    ori = new_peak_val / (natural_peak_val * 1.15) if natural_peak_val > 0 else 0
+    
+    metrics = {
+        "natural_peak_month": natural_peak_month,
+        "lead_time": lead_time,
+        "ab": ab,
+        "paf": paf,
+        "ori": ori,
+        "natural_peak_val": natural_peak_val,
+        "new_peak_val": new_peak_val
+    }
+    
+    return monthly_ts, metrics
