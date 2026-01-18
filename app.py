@@ -1206,7 +1206,19 @@ with tab1:
     risk_score = metrics['overload_risk']
     amp_factor = metrics['amplification_factor']
     
-    if metrics['insight_type'] == "Smoothing":
+    if selected_ad_month == "January":
+        status_color = "#16A34A" # Green/Positive
+        headline = "Strategic Start of Year"
+        desc = f"Launching in January allows for early saturation before the mid-year peak. This timing leverages the post-holiday lull to build awareness without overwhelming centers, resulting in a manageable {amp_factor:.0%} lift."
+    elif selected_ad_month == "February":
+        status_color = "#2563EB" # Blue/Neutral-Positive
+        headline = "Pre-Peak Optimization"
+        desc = f"February campaigns typically smooth out the March/April renewal spikes. By initiating now, you can preemptively address demand, ensuring a stable transition into the fiscal year-end."
+    elif selected_ad_month == "March":
+        status_color = "#DC2626" # Red/Warning
+        headline = "Fiscal Year End High Demand"
+        desc = f"March is historically a high-volume month due to fiscal year-end requirements. Launching a campaign now risks compounding the natural 'End of Financial Year' rush, potentially leading to a {amp_factor:.0%} amplification in wait times."
+    elif metrics['insight_type'] == "Smoothing":
         status_color = "#16A34A"
         headline = "Optimal Campaign Timing"
         desc = f"Launching the campaign in {selected_ad_month} occurs two months before a natural demand peak. This timing allows the system to distribute increased demand more evenly, reducing peak load by approximately {abs(amp_factor):.0%}. This approach helps prevent service center overload."
