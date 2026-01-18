@@ -367,13 +367,14 @@ def perform_custom_clustering(df, n_clusters=3):
     
     return [cluster_map[label] for label in cluster_labels]
 
-def generate_awareness_impact_data(filtered_df, advertising_month_idx=None):
+def generate_awareness_impact_data(filtered_df, advertising_month_idx=None, force_daily_mode=False):
     """
     Generates demand data (Daily or Monthly) based on the scope of the input dataframe.
     
     Args:
         filtered_df (pd.DataFrame): The filtered dataset.
         advertising_month_idx (int): 0-11 representing Jan-Dec.
+        force_daily_mode (bool): If True, forces daily granularity even if range is large (used for specific month view).
         
     Returns:
         pd.DataFrame: Data with columns [Month, Natural Demand, Observed Demand]. 
@@ -386,8 +387,8 @@ def generate_awareness_impact_data(filtered_df, advertising_month_idx=None):
     impact_metrics = {"amplification_factor": 0.0, "overload_risk": 0.0, "insight_type": "Neutral"}
 
     # 1. Determine Scope (Daily vs Monthly)
-    is_daily = False
-    if 'date' in filtered_df.columns and len(filtered_df) > 0:
+    is_daily = force_daily_mode
+    if not is_daily and 'date' in filtered_df.columns and len(filtered_df) > 0:
         date_range_days = (filtered_df['date'].max() - filtered_df['date'].min()).days
         # If filtered to a specific month or small range (<= 40 days), show Daily View
         if date_range_days <= 40: 

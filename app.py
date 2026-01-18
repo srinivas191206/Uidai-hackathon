@@ -1140,7 +1140,9 @@ with tab1:
         """, unsafe_allow_html=True)
 
     # --- GENERATE DATA (using filtered campaign data) ---
-    impact_df, metrics = generate_awareness_impact_data(filtered_df_campaign, ad_month_idx)
+    # Force daily mode if a specific month is selected
+    force_daily = (selected_ad_month != "All")
+    impact_df, metrics = generate_awareness_impact_data(filtered_df_campaign, ad_month_idx, force_daily_mode=force_daily)
     
     # --- VISUALIZATION (Plotly) ---
     with col_aw2:
