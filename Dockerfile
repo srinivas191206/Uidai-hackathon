@@ -1,9 +1,4 @@
-NameError: name 'capacity_adj_pct' is not defined
-Traceback:
-File "/home/user/.local/lib/python3.9/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 542, in _run_script
-exec(code, module.__dict__)
-File "/home/user/app/app.py", line 945, in <module>
-if capacity_adj_pct > 0 or extra_hours > 0:FROM python:3.9-slim
+FROM python:3.9-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
