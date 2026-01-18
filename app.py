@@ -1117,6 +1117,8 @@ with tab1:
              st.markdown(f"<div style='color: #dc2626; font-size: 0.8rem; font-weight: 600;'>⚠️ High Risk of Overload</div>", unsafe_allow_html=True)
         else:
              st.markdown(f"<div style='color: #16a34a; font-size: 0.8rem; font-weight: 600;'>✓ Capacity Adequate</div>", unsafe_allow_html=True)
+             
+        st.markdown("<div style='font-size: 0.7rem; color: #64748B; margin-top: 10px; font-style: italic;'>* Disclaimer: Metrics are statistical estimates based on historical data.</div>", unsafe_allow_html=True)
 
     with c_sim2:
         # 3. Visualization

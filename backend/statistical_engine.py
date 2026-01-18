@@ -381,8 +381,8 @@ def generate_awareness_impact_data(filtered_df, advertising_month_idx=None, forc
         df: Monthly Data
         metrics: {paf, ori, roi, insight}
     """
-    month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
-                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    month_names = ["January", "February", "March", "April", "May", "June", 
+                   "July", "August", "September", "October", "November", "December"]
     
     # 1. Extract Natural Demand (Baseline - REAL DATA)
     # Aggregating to 12-month cycle to identify seasonality from ACTUAL historical data
@@ -481,12 +481,17 @@ def generate_awareness_impact_data(filtered_df, advertising_month_idx=None, forc
              insight_expl = f"Timing is {months_until_peak} months from peak. Impact is lower due to seasonal distance."
 
         # Apply the lift (Distributed over 2 months: Launch Month + Next Month)
-        # 60% of effect in month 1, 40% in month 2 (decay)
-        lift_total = natural_demand[adv_month] * amplification_base
+        # VISIBILITY FIX: We calculate lift based on a blend of Local Demand and Annual Peak.
+        # This simulates the campaign "creating" new demand rather than just amplifying existing low traffic.
+        # This makes the "bump" visible even in low-volume months (like September).
         
-        observed_demand[adv_month] += lift_total * 0.6
+        base_volume = (natural_demand[adv_month] * 0.3) + (natural_peak_val * 0.7)
+        lift_total = base_volume * amplification_base
+        
+        # Distribute: 70% in month 1 (immediate impact), 30% in month 2
+        observed_demand[adv_month] += lift_total * 0.7
         next_month = (adv_month + 1) % 12
-        observed_demand[next_month] += lift_total * 0.4
+        observed_demand[next_month] += lift_total * 0.3
         
         # 3. COMPUTE GOVERNMENT METRICS
         
