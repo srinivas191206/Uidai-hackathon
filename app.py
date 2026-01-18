@@ -82,20 +82,20 @@ st.markdown(f"""
         letter-spacing: 0.5px;
     }}
     .how-it-works {{
-        color: #003366;
-        text-decoration: none;
+        color: #003366 !important;
+        text-decoration: none !important;
         font-size: 0.85rem;
-        font-weight: 600;
+        font-weight: 700;
         padding: 6px 16px;
-        background-color: #FFFFFF;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background-color: #FFFFFF !important;
         border-radius: 6px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.3s ease;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        display: inline-block;
     }}
     .how-it-works:hover {{
-        background-color: #F8FAFC;
-        color: #2563EB;
+        background-color: #F8FAFC !important;
+        color: #2563EB !important;
         transform: translateY(-2px);
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }}

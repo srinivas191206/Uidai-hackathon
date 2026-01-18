@@ -33,41 +33,50 @@ Instead of a heavy SQL backend, the prototype uses a **Vectorized NumPy Engine**
 
 ## 3. MATHEMATICAL & ANALYTICAL FORMULARY
 
-### 3.1. Demand & Load Metrics
-- **Demand Score**: Measures relative loading of a district compared to the national average.
-  $$S_{demand} = \frac{Volume_{district}}{\mu(National\ District\ Volume)}$$
-- **Update Pressure Index**: Estimates work intensity based on adult update volume.
-  $$I_{update} = \frac{Adult\ Activities (18+)}{Total\ Activity}$$
-- **DTPI (Demographic Transition Pressure Index)**: Predicts upcoming load surges as children age into the 18+ biometric update cycle.
-  $$DTPI = \frac{Age_{5-17}\ Volume}{Age_{18+}\ Volume}$$
-- **BUBR (Biometric Update Burden Ratio)**: Measures the share of adult biometric corrections/updates.
-  $$BUBR = \frac{Adult\ Activities (18+)}{Total\ Activity}$$
+### 3.1. Baseline Forecasting: Holt’s Linear Trend
+The core statistical engine uses **Double Exponential Smoothing** to capture level and trend components. This ensures accurate forecasting even with the inherent noise in daily enrolment telemetry.
+- **Recursive Update**:
+  $$l_t = \alpha y_t + (1 - \alpha)(l_{t-1} + b_{t-1})$$
+  $$b_t = \beta (l_t - l_{t-1}) + (1 - \beta) b_{t-1}$$
+- **Forecast Equation**:
+  $$\hat{y}_{t+h|t} = l_t + h b_t$$
+This captures the base growth level ($l_t$) and the monthly trend slope ($b_t$), allowing the system to project a 15-day "Natural Demand" baseline for all strategy simulations.
 
-### 3.2. Geographic Equity & Access
-- **PSACI (Access Pressure Index)**: Identifies infrastructure blindspots using a composite of volume and saturation proxies.
-  $$PSACI = (Vol_{norm} \cdot 0.5) + (ChildRatio_{norm} \cdot 0.5)$$
-- **Pincode Concentration Risk**: Measures whether services are urban-centric.
-  $$Risk_{conc} = \frac{\sum Activity\ in\ Top\ 10\%\ Pincodes}{Total\ Activity}$$
+### 3.2. Event Impact & Post-Event Evaluation
+To measure the real-world effectiveness of historical camps, we use a counterfactual approach to isolate the **Total Uplift ($\delta$)**.
+- **Absolute Uplift**: $\delta = \sum_{k=0}^{d-1} (y_{t_e+k} - \hat{y}^{counterfactual}_{t_e+k})$
+- **Relative Lift**: $\delta \% = 100 \times \frac{\delta}{\sum \hat{y}^{counterfactual}}$
+- **Campaign ROI**: $ROI = \delta / Expenditure$
+This calculates exactly how many "bonus" enrolments were generated per rupee spent, allowing for high-precision budget calibration.
 
-### 3.3. Predictive & Causal Models
-- **Predictive Analytics (Holt-Linear)**: Forecasts a 15-day enrolment trend with weekly seasonality.
-  $$F_{t+h} = (m \cdot x + c) + (Seasonality_{weekly} \cdot 0.8)$$
-- **Campaign Timing Simulator**: Models the marginal ROI of awareness campaigns based on proximity to natural demand peaks.
-  $$Lift = NaturalDemand \times Ab(LeadTime)$$
-  - **PAF (Peak Amplification Factor)**: $\frac{NewPeak - NaturalPeak}{NaturalPeak}$
-  - **ORI (Ops Risk Index)**: $\frac{NewPeak}{NaturalPeak \cdot 1.15}$
+### 3.3. Campaign Strategic Optimization
+The Simulator uses two key indices to optimize advertising and campaign launch timing ($t_{offset}$).
+- **Peak Amplification Factor (PAF)**: $PAF = \frac{NewPeak - NaturalPeak}{NaturalPeak}$
+- **Ops Risk Index (ORI)**: $ORI = \frac{NewPeak}{NaturalPeak \cdot 1.15}$
+**Strategic Interpretation**: The **PAF** measures the intensity of the surge, while the **ORI** measures **Advertising Saturation**. If ORI > 1.0, the campaign is poorly timed—targeting a period where demand is already peak, leading to "Saturation Waste" and diminishing returns on marketing spend.
 
-### 3.4. Anomaly Detection (Z-Score)
-- **Daily Activity Alerts**: Flags significant deviations (Spikes/Drops).
-  $$Z = \frac{x - \mu_{7d}}{\sigma_{7d} + \epsilon}$$
-- **Threshold**: $|Z| > 2.0$ triggers automated risk interpretation.
+### 3.4. Demographic & Load Pressure
+- **DTPI (Demographic Transition Pressure Index)**: $DTPI = \frac{Age_{5-17}\ Volume}{Age_{18+}\ Volume}$
+  Predicts upcoming load surges as children age into the 18+ biometric update cycle.
+- **BUBR (Update Burden Ratio)**: $BUBR = \frac{Adult\ Activities (18+)}{Total\ Activity}$
+  Measures the operational weight of adult biometric corrections versus new registrations.
 
-### 3.5. Infrastructure Simulation
-- **Policy Simulator**: Estimates "Days to Clear Backlog" based on personnel and hour adjustments.
-  $$Days = \frac{Backlog}{DailyCapacity_{New} - DailyDemand_{Approx}}$$
+### 3.5. Geographic Equity & Access
+- **PSACI (Access Pressure Index)**: $PSACI = (Vol_{norm} \cdot 0.5) + (ChildRatio_{norm} \cdot 0.5)$
+  A composite index used to identify "Infrastructure Blindspots" by weighing volume against youth population saturation.
+- **Pincode Concentration Risk**: $Risk_{conc} = \frac{\sum Activity\ in\ Top\ 10\%\ Pincodes}{Total\ Activity}$
+  Detects whether services are overly centralized in urban hubs (Urban-Centric Bias).
 
-### 3.6. Algorithmic Segmentation (K-Means)
-- **District Clustering**: Segmenting districts into operational zones (Critical, Monitoring, Stable) using **WCSS Optimization**.
+### 3.6. Statistical Anomaly Detection (Z-Score)
+Identifies significant operational shifts (Spikes/Drops) using a rolling window approach.
+- **Formula**: $Z = \frac{x - \mu_{7d}}{\sigma_{7d} + \epsilon}$
+- **Threshold**: $|Z| > 2.0$ triggers automated alerts for potential fraud (spikes) or network outages (drops).
+
+### 3.7. Strategic Growth & Advertising Logic
+The Command Center identifies **High-Priority Advertising Zones** by cross-referencing demand and access metrics.
+- **Ad Opportunity**: Pincodes with **High PSACI** + **Low Demand Score** are flagged. This reveals areas with massive population density but low enrollment activity.
+- **Action**: Implementing targeted advertising (digital/OOH) in these specific zones converts "Silent Under-Enrolment" into active registrations with the highest possible conversion rate.
+- **Timing**: Ads are scheduled using the **High Impact Window** (1-2 months before natural peaks) to ensure maximum awareness capture during high-propensity periods.
 
 ---
 
