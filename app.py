@@ -1210,81 +1210,107 @@ with tab1:
     if selected_ad_month == "January":
         status_color = "#16A34A" # Green/Positive
         headline = "Strategic Start of Year"
-        desc = f"Launching in January allows for early saturation before the mid-year peak. This timing leverages the post-holiday lull to build awareness without overwhelming centers, resulting in a manageable {amp_factor:.0%} lift."
+        desc = f"Launching in January allows for early saturation before the mid-year peak. This timing leverages the post-holiday lull to build awareness without overwhelming centers."
+        recommendation = "✅ **Recommended Strategy:** Execute high-intensity launch immediately to maximize Q1 adoption."
     elif selected_ad_month == "February":
         status_color = "#2563EB" # Blue/Neutral-Positive
         headline = "Pre-Peak Optimization"
-        desc = f"February campaigns typically smooth out the March/April renewal spikes. By initiating now, you can preemptively address demand, ensuring a stable transition into the fiscal year-end."
+        desc = f"February campaigns typically smooth out the March/April renewal spikes. By initiating now, you can preemptively address demand, ensuring a stable transition."
+        recommendation = "ℹ️ **Recommended Strategy:** Digital-first campaign to prep users for upcoming renewal cycle."
     elif selected_ad_month == "March":
         status_color = "#DC2626" # Red/Warning
         headline = "Fiscal Year End High Demand"
-        desc = f"March is historically a high-volume month due to fiscal year-end requirements. Launching a campaign now risks compounding the natural 'End of Financial Year' rush, potentially leading to a {amp_factor:.0%} amplification in wait times."
+        desc = f"March is historically a high-volume month due to fiscal year-end requirements. Launching a campaign now risks compounding the natural 'End of Financial Year' rush."
+        recommendation = "⛔ **Recommended Strategy:** **POSTPONE LAUNCH.** Focus exclusively on clearing existing backlog."
     elif selected_ad_month == "April":
         status_color = "#16A34A" # Green
         headline = "New Financial Year Cycle"
-        desc = f"April marks the beginning of the new financial year. Historical patterns suggest a 'Reset Phase' with moderate footfall. It is an optimal window for targeted campaigns before the summer rush begins."
+        desc = f"April marks the beginning of the new financial year. Historical patterns suggest a 'Reset Phase' with moderate footfall. It is an optimal window for targeted campaigns."
+        recommendation = "✅ **Recommended Strategy:** Launch aggressively across all channels to capture early fiscal year renewals."
     elif selected_ad_month == "May":
         status_color = "#F59E0B" # Orange/Warning
         headline = "Summer Vacation Pre-Rush"
-        desc = f"May often sees increasing demand as families utilize summer vacations for updates. Launching now requires careful capacity planning to handle the student demographic surge expected in June."
+        desc = f"May often sees increasing demand as families utilize summer vacations for updates. Launching now requires careful capacity planning to handle the surge."
+        recommendation = "⚠️ **Recommended Strategy:** Scale up weekend camp capacity before launching mass awareness."
     elif selected_ad_month == "June":
         status_color = "#DC2626" # Red/Critical
         headline = "Academic Admission Season Peak"
-        desc = f"June correlates with school and college admissions, driving the highest annual demand for 5-17 year age updates. Launching a general awareness campaign now is NOT recommended as it will violently aggravate the existing capacity crunch."
+        desc = f"June correlates with school and college admissions, driving the highest annual demand for 5-17 year age updates. Launching a general awareness campaign is risky."
+        recommendation = "⛔ **Recommended Strategy:** **AVOID GENERAL ADS.** Restrict to targeted student camps only."
     elif selected_ad_month == "July":
         status_color = "#2563EB" # Blue
         headline = "Monsoon Operational Window"
-        desc = f"July typically experiences logistical challenges due to the monsoon, often dampening physical footfall. A digital-first campaign strategy is recommended here to balance the reduced physical access to centers."
+        desc = f"July typically experiences logistical challenges due to the monsoon, often dampening physical footfall. Physical access to centers may be reduced."
+        recommendation = "ℹ️ **Recommended Strategy:** Shift budget to Mobile/Online Update awareness to reduce physical footfall."
     elif selected_ad_month == "August":
         status_color = "#16A34A" # Green
         headline = "Pre-Festival Awareness Drive"
-        desc = f"August offers a stable operational window before the major festival season. It is an ideal time for 'MBU (Mandatory Biometric Update)' campaigns, ensuring citizens are ready before the holiday period distractions."
+        desc = f"August offers a stable operational window before the major festival season. It is an ideal time for 'MBU (Mandatory Biometric Update)' campaigns."
+        recommendation = "✅ **Recommended Strategy:** Prioritize MBU drives now before the holiday season distractions begin."
     elif selected_ad_month == "September":
         status_color = "#F59E0B" # Orange
-        headline = "Scholarship Season & Post-Monsoon Recovery"
-        desc = f"Demand often rises in September due to scholarship applications. While not a critical peak, campaigns should be targeted specifically at the 5-18 age group to avoid unnecessary crowding from other demographics."
+        headline = "Scholarship Season & Post-Monsoon"
+        desc = f"Demand often rises in September due to scholarship applications. Campaigns should be targeted specifically at the 5-18 age group."
+        recommendation = "⚠️ **Recommended Strategy:** Coordinate with schools for bulk updates; avoid general public targeting."
     elif selected_ad_month == "October":
         status_color = "#16A34A" # Green
         headline = "Festival Season Opportunity"
-        desc = f"October often sees a dip in natural demand due to major festivals. This is a 'Counter-Cyclical' opportunity to run high-intensity campaigns to utilize idle center capacity effectively."
+        desc = f"October often sees a dip in natural demand due to major festivals. This is a 'Counter-Cyclical' opportunity to run high-intensity campaigns."
+        recommendation = "✅ **Recommended Strategy:** Run 'Special Holiday Camps' to utilize idle center capacity."
     elif selected_ad_month == "November":
         status_color = "#2563EB" # Blue
         headline = "Post-Festival Backlog Clearance"
-        desc = f"November usually involves clearing backlogs from the festival season. A moderate campaign focusing on 'Mobile Updates' can help reduce footfall strain while maintaining engagement."
+        desc = f"November usually involves clearing backlogs from the festival season. A moderate campaign can help reduce footfall strain while maintaining engagement."
+        recommendation = "ℹ️ **Recommended Strategy:** Focus on 'Appointment-Only' slots to manage post-festival recovery."
     elif selected_ad_month == "December":
         status_color = "#16A34A" # Green
         headline = "Winter Session Stability"
-        desc = f"December offers one of the most stable demand patterns of the year. It is the safest month for broad, high-impact awareness campaigns with minimal risk of system overload."
+        desc = f"December offers one of the most stable demand patterns of the year. It is the safest month for broad, high-impact awareness campaigns."
+        recommendation = "✅ **Recommended Strategy:** Safe for Maximum Volume campaigns across all regions."
     elif metrics['insight_type'] == "Smoothing":
         status_color = "#16A34A"
         headline = "Optimal Campaign Timing"
-        desc = f"Launching the campaign in {selected_ad_month} occurs two months before a natural demand peak. This timing allows the system to distribute increased demand more evenly, reducing peak load by approximately {abs(amp_factor):.0%}. This approach helps prevent service center overload."
+        desc = f"Launching in {selected_ad_month} is optimal. It distributes demand evenly, reducing peak load by {abs(amp_factor):.0%}."
+        recommendation = "✅ **Recommended Strategy:** Proceed with planned campaign."
     elif metrics['insight_type'] == "Amplification":
         status_color = "#DC2626"
-        headline = "High Risk: Peak Amplification Detected"
-        desc = f"Launching the campaign in {selected_ad_month} coincides with or immediately precedes a natural demand peak. This timing is projected to increase the peak by {amp_factor:.0%}, which may exceed operational capacity and cause service delays."
+        headline = "High Risk: Peak Amplification"
+        desc = f"Launching in {selected_ad_month} will amplify the peak by {amp_factor:.0%}, exceeding operational capacity."
+        recommendation = "⛔ **Recommended Strategy:** Re-schedule to a smoother month."
     else:
         status_color = "#2563EB"
         headline = "Standard Campaign Impact"
-        desc = f"Launching the campaign in {selected_ad_month} is expected to generate moderate awareness without significantly affecting existing demand patterns. The timing does not align closely with major seasonal peaks."
+        desc = f"Launching in {selected_ad_month} will generate moderate awareness with manageable impact."
+        recommendation = "ℹ️ **Recommended Strategy:** Monitor daily footfall; proceed with caution."
 
     st.markdown(f"""
-    <div style='background: {status_color}08; border-left: 4px solid {status_color}; padding: 22px; border-radius: 6px; margin-top: 20px;'>
-        <div style='margin-bottom: 12px;'>
-            <div style='font-weight: 700; color: {status_color}; font-size: 1.1em; margin-bottom: 8px;'>{headline}</div>
-            <div style='font-size: 0.95em; color: #334155; line-height: 1.6;'>{desc}</div>
-        </div>
-        <div style='margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border-top: 1px solid {status_color}20; padding-top: 18px;'>
+    <div style='background: {status_color}08; border-left: 5px solid {status_color}; padding: 20px; border-radius: 8px; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
+        <div style='display: grid; grid-template-columns: 3fr 2fr; gap: 25px;'>
+            
+            <!-- LEFT SIDE: ANALYSIS -->
             <div>
-                <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Peak Overload Risk</div>
-                <div style='font-size: 1.6em; font-weight: 700; color: #1E293B;'>{risk_score:.2f}</div>
-                <div style='font-size: 0.7em; color: #94A3B8; margin-top: 2px;'>Threshold: 0.85</div>
+                <div style='font-weight: 800; color: {status_color}; font-size: 1.2em; margin-bottom: 10px; letter-spacing: -0.5px;'>{headline}</div>
+                <div style='font-size: 0.95em; color: #334155; line-height: 1.6; margin-bottom: 15px;'>{desc}</div>
+                <div style='background: white; padding: 12px; border-radius: 6px; border: 1px solid {status_color}30;'>
+                    <div style='font-size: 0.9em; color: #1E293B;'>{recommendation}</div>
+                </div>
             </div>
-            <div>
-                <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Peak Change</div>
-                <div style='font-size: 1.6em; font-weight: 700; color: #1E293B;'>{amp_factor:+.0%}</div>
-                <div style='font-size: 0.7em; color: #94A3B8; margin-top: 2px;'>vs Natural Pattern</div>
+
+            <!-- RIGHT SIDE: METRICS -->
+            <div style='display: flex; flex-direction: column; gap: 12px; justify-content: center; border-left: 1px solid {status_color}20; padding-left: 25px;'>
+                <div>
+                    <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;'>Projected Peak Risk</div>
+                    <div style='font-size: 2em; font-weight: 800; color: {status_color}; line-height: 1;'>{risk_score:.2f}</div>
+                    <div style='font-size: 0.75em; color: #94A3B8; margin-top: 4px;'>Threshold: 0.85</div>
+                </div>
+                <div style='height: 1px; background: {status_color}20; width: 100%;'></div>
+                <div>
+                    <div style='font-size: 0.75em; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;'>Volume Change</div>
+                    <div style='font-size: 2em; font-weight: 800; color: #1E293B; line-height: 1;'>{amp_factor:+.0%}</div>
+                    <div style='font-size: 0.75em; color: #94A3B8; margin-top: 4px;'>vs Natural Pattern</div>
+                </div>
             </div>
+            
         </div>
     </div>
     """, unsafe_allow_html=True)
