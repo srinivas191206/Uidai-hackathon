@@ -367,149 +367,169 @@ def perform_custom_clustering(df, n_clusters=3):
     
     return [cluster_map[label] for label in cluster_labels]
 
-def generate_awareness_impact_data(filtered_df, advertising_month_idx=None):
+def generate_awareness_impact_data(filtered_df, advertising_month_idx=None, force_daily_mode=False, target_date_range=None):
     """
-    Generates monthly demand data based on actual dataset patterns to demonstrate advertising impact.
+    Advanced Causal Logic Simulator for Campaign Timing.
     
-    Args:
-        filtered_df (pd.DataFrame): The filtered dataset (state/district specific)
-        advertising_month_idx (int): 0-11 representing Jan-Dec. If None, no advertising.
-        
+    Logic:
+    1. Identifies Natural Demand Peaks (Seasonality).
+    2. Applies a 'Timing Sensitivity Curve': Campaigns run 1-2 months BEFORE a peak 
+       have the highest 'Amplification Factor' (shifts latent demand).
+    3. Campaigns run DURING a peak have low impact (Saturation).
+    
     Returns:
-        pd.DataFrame: Monthly data with columns [Month, Natural Demand, Observed Demand]
-        dict: Impact metrics {amplification_factor, overload_risk, insight_type}
+        df: Monthly Data
+        metrics: {paf, ori, roi, insight}
     """
-    # 1. Determine Scope (Daily vs Monthly)
-    is_daily = False
-    if 'date' in filtered_df.columns and len(filtered_df) > 0:
-        date_range_days = (filtered_df['date'].max() - filtered_df['date'].min()).days
-        if date_range_days <= 60: # Threshold for "Zoom" mode
-            is_daily = True
-            
-    if is_daily:
-        # --- DAILY GRANULARITY ---
-        daily_df = filtered_df.groupby('date')['total_activity'].sum().reset_index()
-        daily_df = daily_df.sort_values('date')
-        
-        natural_demand = daily_df['total_activity'].values
-        dates = daily_df['date'].dt.strftime('%d %b').values # Format: 01 Jan
-        
-        # Simple Daily Simulation logic
-        observed_demand = natural_demand.astype(float).copy()
-        
-        # Apply ad impact if dates fall within selected ad month AND campaign is active
-        if advertising_month_idx is not None:
-            adv_month_num = advertising_month_idx + 1 # 1-12
-            
-            # Vectorized impact application
-            date_months = daily_df['date'].dt.month
-            
-            # Primary Month Impact (+20%)
-            mask_primary = date_months == adv_month_num
-            observed_demand[mask_primary] *= 1.25
-            
-            # Secondary Month Impact (+10% - Spillover)
-            mask_secondary = date_months == (adv_month_num % 12 + 1)
-            observed_demand[mask_secondary] *= 1.10
-            
-            impact_metrics = {"amplification_factor": 0.25, "overload_risk": observed_demand.max() / (natural_demand.max() * 1.5 + 1), "insight_type": "Micro-Targeting"}
-        else:
-             impact_metrics = {"amplification_factor": 0.0, "overload_risk": observed_demand.max() / (natural_demand.max() * 1.5 + 1), "insight_type": "Neutral (No Campaign)"}
-        
-        df = pd.DataFrame({
-            "Month": dates, # Reuse 'Month' column name for X-axis compatibility in app.py
-            "Natural Demand": natural_demand,
-            "Observed Demand": observed_demand
-        })
-        return df, impact_metrics
-
-    # --- MONTHLY AGGREGATION (Existing Logic) ---
-    month_names = ["January", "February", "March", "April", "May", "June", 
-                   "July", "August", "September", "October", "November", "December"]
+    month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     
-    # 1. Extract actual monthly pattern from dataset
+    # 1. Extract Natural Demand (Baseline - REAL DATA)
+    # Aggregating to 12-month cycle to identify seasonality from ACTUAL historical data
     if 'date' in filtered_df.columns and len(filtered_df) > 0:
-        # Create a copy to avoid modifying the original dataframe
         df_copy = filtered_df.copy()
-        
-        # Group by month and calculate average activity
         df_copy['month_num'] = pd.to_datetime(df_copy['date']).dt.month
-        monthly_activity = df_copy.groupby('month_num')['total_activity'].sum().reindex(range(1, 13), fill_value=0)
         
-        # Normalize to a reasonable scale (thousands)
-        if monthly_activity.sum() > 0:
-            natural_demand = (monthly_activity / monthly_activity.sum() * 2000).values
-        else:
-            # Fallback to generic pattern if no data
-            natural_demand = np.array([120, 130, 150, 180, 250, 200, 160, 150, 180, 240, 190, 140])
+        # Calculate mean activity per month to handle multi-year data correctly
+        # (e.g., Average of Jan 2023 and Jan 2024)
+        monthly_avg = df_copy.groupby('month_num')['total_activity'].mean()
+        
+        # Reindex to ensure all 12 months exist (fill missing with 0)
+        monthly_activity = monthly_avg.reindex(range(1, 13), fill_value=0)
+        
+        # Use simple smoothing (rolling window) to handle noisy real-world data
+        # This prevents single-day outliers from looking like massive seasonal peaks
+        monthly_activity = monthly_activity.rolling(window=3, min_periods=1, center=True).mean()
+        
+        natural_demand = monthly_activity.values
+        
+        # Normalize to avoid graph scaling issues (optional, but good for readability)
+        # We keep original magnitude for "Real Time" feel, or normalize for "Index"?
+        # Requirement: "Real Time Analysis" -> Keep Original Magnitude
+        natural_demand = np.maximum(natural_demand, 0) # Ensure no negatives
+        
     else:
-        # Fallback pattern
-        natural_demand = np.array([120, 130, 150, 180, 250, 200, 160, 150, 180, 240, 190, 140])
+        # Strict "No Data" handling
+        natural_demand = np.zeros(12)
+        
+    # Validation: If total demand is effectively zero, we can't simulate
+    if natural_demand.sum() < 10:
+        return pd.DataFrame({"Month": month_names, "Natural Demand": np.zeros(12), "Observed Demand": np.zeros(12)}), {
+            "statement": "Insufficient Data",
+            "confidence": "None",
+            "explanation": " Selected region has no historical data to analyze.",
+            "ori_score": 0,
+            "paf_score": 0
+        }
+        
+    natural_peak_val = natural_demand.max()
+    if natural_peak_val == 0: natural_peak_val = 1 # Avoid div by zero
+    natural_peak_month_idx = np.argmax(natural_demand) # 0-11
     
-    # Ensure minimum values
-    natural_demand = np.maximum(natural_demand, 50)
+    # 2. Apply Interaction Logic (Campaign Effect)
+    observed_demand = natural_demand.astype(float).copy()
     
-    # 2. Detect peaks (top 2 months)
-    peak_indices = np.argsort(natural_demand)[-2:]  # Get indices of 2 highest months
-    peaks = sorted(peak_indices.tolist())
-    
-    # 3. Apply Advertising Impact
-    observed_demand = natural_demand.copy()
-    impact_metrics = {"amplification_factor": 0.0, "overload_risk": 0.0, "insight_type": "Neutral"}
+    # Metrics containers
+    paf = 0.0 # Peak Amplification Factor
+    ori = 0.0 # Operational Risk Index
+    insight = {
+        "statement": "No active campaign simulation.",
+        "confidence": "N/A",
+        "explanation": "Select a launch month to analyze impact."
+    }
     
     if advertising_month_idx is not None:
         adv_month = advertising_month_idx
         
-        # Find distance to nearest future peak
-        dist_to_peak = min([(p - adv_month) for p in peaks if (p - adv_month) >= 0] or [99])
+        # --- CAUSAL LOGIC: TIMING SENSITIVITY CURVE ---
+        # Calculate 'Lead Time' to the next major peak
+        # Handling cyclic year (e.g. Dec to Jan is 1 month gap)
+        months_until_peak = (natural_peak_month_idx - adv_month) % 12
         
-        # Case A: 2 Months before a peak (Optimal Timing)
-        if dist_to_peak == 2:
-            peak_idx = adv_month + 2
-            shift_vol = observed_demand[peak_idx] * 0.20
+        amplification_base = 0.0
+        
+        if months_until_peak in [1, 2]:
+            # HIGH SENSITIVITY (Pre-Peak)
+            # Campaign effectively captures early interest and amplifies the upcoming peak
+            amplification_base = 0.35 # 35% Lift
+            insight_type = "High Sensitivity"
+            insight_stmt = f"Campaign in {month_names[adv_month]} significantly amplifies the {month_names[natural_peak_month_idx]} peak."
+            insight_expl = "Launching 1-2 months before a natural spike creates maximum resonance, aggregating latent demand."
             
-            observed_demand[peak_idx] -= shift_vol
-            observed_demand[adv_month] += shift_vol * 0.4
-            if adv_month + 1 < 12:
-                observed_demand[adv_month + 1] += shift_vol * 0.6
+        elif months_until_peak == 0:
+            # SATURATION (At Peak)
+            # Marginal returns are low because demand is already maxed out
+            amplification_base = 0.10 # 10% Lift
+            insight_type = "Saturation"
+            insight_stmt = f"Campaign in {month_names[adv_month]} hits diminishing returns due to saturation."
+            insight_expl = "Demand is naturally at capacity. Additional Awareness yields minimal incremental volume."
             
-            impact_metrics["amplification_factor"] = -0.15
-            impact_metrics["insight_type"] = "Smoothing"
-            
-        # Case B: 1 Month before or During Peak (Poor Timing)
-        elif dist_to_peak <= 1 and dist_to_peak >= 0:
-            target_idx = adv_month + dist_to_peak
-            
-            spike = observed_demand[target_idx] * 0.35
-            observed_demand[target_idx] += spike
-            
-            if target_idx + 1 < 12:
-                observed_demand[target_idx + 1] -= spike * 0.5
-                
-            impact_metrics["amplification_factor"] = 0.35
-            impact_metrics["insight_type"] = "Amplification"
-            
+        elif months_until_peak > 6:
+            # OFF-CYCLE (Trough)
+            # Creates a pure "Awareness Lift" but no peak synergy
+            amplification_base = 0.15 
+            insight_type = "Baseline Lift"
+            insight_stmt = f"Campaign in {month_names[adv_month]} raises baseline floor but misses peak synergy."
+            insight_expl = "Activity is naturally low. Campaign generates volume but doesn't stress the system."
+        
         else:
-            # General awareness bump
-            observed_demand[adv_month] += 20
-            if adv_month + 1 < 12:
-                observed_demand[adv_month + 1] += 10
-            impact_metrics["insight_type"] = "General Awareness"
-    
-    # CRITICAL: Ensure observed demand never drops below natural demand
-    # Campaigns should only increase demand, never decrease it
-    observed_demand = np.maximum(observed_demand, natural_demand)
+             # Moderate
+             amplification_base = 0.20
+             insight_type = "Moderate Lift"
+             insight_stmt = f"Standard impact profile projected for {month_names[adv_month]} launch."
+             insight_expl = "Campaign timing is neutral relative to the seasonal cycle."
 
-    # 4. Calculate Risk Score
-    capacity = natural_demand.max() * 1.3  # Dynamic capacity based on data
-    max_observed = observed_demand.max()
-    impact_metrics["overload_risk"] = max_observed / capacity
-    
-    # Create DataFrame
+        # Apply the lift (Distributed over 2 months: Launch Month + Next Month)
+        # 60% of effect in month 1, 40% in month 2 (decay)
+        lift_total = natural_demand[adv_month] * amplification_base
+        
+        observed_demand[adv_month] += lift_total * 0.6
+        next_month = (adv_month + 1) % 12
+        observed_demand[next_month] += lift_total * 0.4
+        
+        # 3. COMPUTE GOVERNMENT METRICS
+        
+        # IMPROVED PAF: Peak Amplification Factor
+        # Now measures the maximum % lift observed in the specific campaign window 
+        # relative to the natural demand of that month. This ensures off-season campaigns
+        # show their local impact even if they don't surpass the annual peak.
+        if natural_demand[adv_month] > 10:
+            paf = ((observed_demand[adv_month] - natural_demand[adv_month]) / natural_demand[adv_month])
+        else:
+            paf = amplification_base * 0.6 # Fallback to theoretical lift factor if base is zero
+        
+        # Add decay month lift if it's higher (unlikely given 60/40 split but safe)
+        decay_month = (adv_month + 1) % 12
+        if natural_demand[decay_month] > 10:
+            paf_decay = ((observed_demand[decay_month] - natural_demand[decay_month]) / natural_demand[decay_month])
+        else:
+            paf_decay = amplification_base * 0.4 # Fallback
+        
+        paf = max(paf, paf_decay)
+        
+        # ORI: Operational Risk Index
+        # Probability of Overload. Threshold = Natural Peak * 1.1 (10% Buffer assumed)
+        # We use the NEW PEAK of the campaign period to check risk
+        campaign_period_peak = max(observed_demand[adv_month], observed_demand[decay_month])
+        capacity_threshold = natural_peak_val * 1.15
+        ori = campaign_period_peak / capacity_threshold
+        
+        # Confidence Tag
+        confidence = "High" if len(filtered_df) > 100 else "Low (Synthetic Data)"
+        
+        insight = {
+            "statement": insight_stmt,
+            "confidence": confidence,
+            "explanation": insight_expl,
+            "ori_score": ori,
+            "paf_score": paf
+        }
+
+    # DataFrame Construction
     df = pd.DataFrame({
         "Month": month_names,
         "Natural Demand": natural_demand,
         "Observed Demand": observed_demand
     })
     
-    return df, impact_metrics
+    return df, insight
