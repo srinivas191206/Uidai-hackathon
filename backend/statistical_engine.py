@@ -448,36 +448,31 @@ def generate_awareness_impact_data(filtered_df, advertising_month_idx=None, forc
         
         amplification_base = 0.0
         
-        if months_until_peak in [1, 2]:
-            # HIGH SENSITIVITY (Pre-Peak)
-            # Campaign effectively captures early interest and amplifies the upcoming peak
-            amplification_base = 0.35 # 35% Lift
-            insight_type = "High Sensitivity"
-            insight_stmt = f"Campaign in {month_names[adv_month]} significantly amplifies the {month_names[natural_peak_month_idx]} peak."
-            insight_expl = "Launching 1-2 months before a natural spike creates maximum resonance, aggregating latent demand."
-            
-        elif months_until_peak == 0:
-            # SATURATION (At Peak)
-            # Marginal returns are low because demand is already maxed out
-            amplification_base = 0.10 # 10% Lift
-            insight_type = "Saturation"
-            insight_stmt = f"Campaign in {month_names[adv_month]} hits diminishing returns due to saturation."
-            insight_expl = "Demand is naturally at capacity. Additional Awareness yields minimal incremental volume."
-            
-        elif months_until_peak > 6:
-            # OFF-CYCLE (Trough)
-            # Creates a pure "Awareness Lift" but no peak synergy
-            amplification_base = 0.15 
-            insight_type = "Baseline Lift"
-            insight_stmt = f"Campaign in {month_names[adv_month]} raises baseline floor but misses peak synergy."
-            insight_expl = "Activity is naturally low. Campaign generates volume but doesn't stress the system."
-        
+        if months_until_peak == 0:
+             # SATURATION (At Peak)
+             amplification_base = 0.10
+             insight_type = "Saturation"
+             insight_stmt = f"Campaign in {month_names[adv_month]} hits diminishing returns due to saturation."
+             insight_expl = "Demand is naturally at capacity. Additional Awareness yields minimal incremental volume."
+             
+        elif months_until_peak in [1, 2]:
+             # HIGH SENSITIVITY (Pre-Peak)
+             amplification_base = 0.35
+             insight_type = "High Sensitivity"
+             insight_stmt = f"Campaign in {month_names[adv_month]} significantly amplifies the {month_names[natural_peak_month_idx]} peak."
+             insight_expl = "Launching 1-2 months before a natural spike creates maximum resonance."
+             
         else:
-             # Moderate
-             amplification_base = 0.20
-             insight_type = "Moderate Lift"
-             insight_stmt = f"Standard impact profile projected for {month_names[adv_month]} launch."
-             insight_expl = "Campaign timing is neutral relative to the seasonal cycle."
+             # CONTINUOUS DECAY CURVE (Dynamic)
+             # Varies from 0.15 to 0.25 based on how close we are to the peak
+             # Logic: The closer to the peak (smaller months_until_peak), the higher the impact
+             # Map distance (3 to 11) to range (0.25 down to 0.15)
+             decay_factor = max(0, (12 - months_until_peak) / 12.0) # 0.0 to 1.0
+             amplification_base = 0.15 + (0.10 * decay_factor) # Range: 0.15 to 0.25
+             
+             insight_type = "Standard Lift"
+             insight_stmt = f"Campaign in {month_names[adv_month]} provides a {amplification_base:.1%} baseline lift."
+             insight_expl = f"Timing is {months_until_peak} months from peak, yielding moderate results."
 
         # Apply the lift (Distributed over 2 months: Launch Month + Next Month)
         # 60% of effect in month 1, 40% in month 2 (decay)
