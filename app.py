@@ -965,7 +965,7 @@ st.markdown(f"**Current Scope:** {scope_name} | **Data Range:** {df['date'].min(
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Overview", 
     "District Analytics", 
-    "Demographic Insights", 
+    f"{dataset_type} Insights", 
     "Geographic Access", 
     "Automated Strategic Insights", 
     "Recommendations"
@@ -1784,7 +1784,7 @@ with tab2:
 
 # --- TAB 3: AGE DEEP DIVE ---
 with tab3:
-    st.markdown('<div class="section-header">Demographic Segment Analysis</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-header">{dataset_type} Segment Analysis</div>', unsafe_allow_html=True)
     
     c_age1, c_age2 = st.columns(2)
     
