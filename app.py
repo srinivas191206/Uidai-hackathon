@@ -28,7 +28,6 @@ header_html = """
                 <span class="header-brand">UIDAI Analytics</span>
             </div>
             <div class="header-right">
-                <a href="#government-grade-data-architecture" class="how-it-works">How it works</a>
             </div>
         </div>
     </div>
@@ -1081,8 +1080,7 @@ with tab1:
             "child_pct": str(round(child_share, 1))
         }
         
-        brief_html = generate_mission_brief_html(kpis_report, recs_preview, insights_preview, scope_name)
-        b64 = base64.b64encode(brief_html.encode()).decode()
+        
         
         # PDF Report Generator
         try:
@@ -1826,7 +1824,7 @@ with tab3:
 
     # --- TRIVARIATE ANALYSIS ---
     st.markdown("---")
-    st.subheader("trivariate analysis")
+    st.subheader("Trivariate Analysis")
     
     heatmap_desc = "Demographic Heatmap Matrix: Visualizing activity intensity across districts and time, colored by Child Enrolment Ratio." if dataset_type == "Enrolment" else f"Demographic Heatmap Matrix: Visualizing activity intensity across districts and time, colored by Youth {dataset_type} Ratio."
     st.markdown(heatmap_desc)
@@ -1965,9 +1963,7 @@ with tab5:
         "child_pct": str(round(child_pct, 1))
     }
     
-    brief_html = generate_mission_brief_html(kpis, recs, insights, scope_name)
-    b64 = base64.b64encode(brief_html.encode()).decode()
-    href = f'<a href="data:file/html;base64,{b64}" download="UIDAI_Mission_Brief_{datetime.now().strftime("%Y%m%d")}.html" style="text-decoration:none;">'
+    
     
 
     

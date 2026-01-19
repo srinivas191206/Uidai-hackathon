@@ -17,7 +17,7 @@ The **UIDAI Analytics Command Center** is a state-of-the-art decision support sy
 ## 2. TECHNICAL ARCHITECTURE
 
 ### 2.1. System Stack
-- **Dashboard Framework**: [Streamlit](https://streamlit.io/) (1.32.0).
+- **Dashboard Framework**: Streamlit (1.32.0).
 - **Numerical Core**: NumPy & Pandas for high-speed matrix computation.
 - **Visualization**: Plotly (GIS Maps, Time-Series, Heatmaps).
 - **Containerization**: Docker & Docker Compose.
