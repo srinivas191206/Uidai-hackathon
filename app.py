@@ -1784,7 +1784,7 @@ with tab2:
 
 # --- TAB 3: AGE DEEP DIVE ---
 with tab3:
-    st.markdown('<div class="section-header">Age-Group Deep Dive</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">Demographic Segment Analysis</div>', unsafe_allow_html=True)
     
     c_age1, c_age2 = st.columns(2)
     
